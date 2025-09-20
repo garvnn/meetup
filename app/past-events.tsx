@@ -6,8 +6,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../../utils/theme';
-import { FloatingTabBar } from '../../components/FloatingTabBar';
+import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../utils/theme';
+import { FloatingTabBar } from '../components/FloatingTabBar';
 
 interface PastEvent {
   id: string;

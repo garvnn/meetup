@@ -102,16 +102,16 @@ export const isAllowedFileType = (filename: string): boolean => {
   
   return Object.values(CONFIG.FILES.ALLOWED_TYPES)
     .flat()
-    .includes(extension);
+    .includes(extension as any);
 };
 
 export const getFileType = (filename: string): 'image' | 'pdf' | 'note' | null => {
   const extension = filename.split('.').pop()?.toLowerCase();
   if (!extension) return null;
   
-  if (CONFIG.FILES.ALLOWED_TYPES.images.includes(extension)) return 'image';
-  if (CONFIG.FILES.ALLOWED_TYPES.pdf.includes(extension)) return 'pdf';
-  if (CONFIG.FILES.ALLOWED_TYPES.notes.includes(extension)) return 'note';
+  if (CONFIG.FILES.ALLOWED_TYPES.images.includes(extension as any)) return 'image';
+  if (CONFIG.FILES.ALLOWED_TYPES.pdf.includes(extension as any)) return 'pdf';
+  if (CONFIG.FILES.ALLOWED_TYPES.notes.includes(extension as any)) return 'note';
   
   return null;
 };

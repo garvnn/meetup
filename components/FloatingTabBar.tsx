@@ -44,7 +44,6 @@ export const FloatingTabBar: React.FC = () => {
             style={[styles.tabButton, isActive && styles.activeTabButton]}
             onPress={() => handleTabPress(tab.href)}
             activeOpacity={0.9}
-            underlayColor="transparent"
           >
             <BlurView 
               intensity={80} 
@@ -88,7 +87,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   activeTabButton: {
-    ...SHADOWS.xl,
+    ...SHADOWS.lg,
     transform: [{ scale: 1.05 }],
   },
   buttonBlur: {
@@ -109,7 +108,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   label: {
-    ...TYPOGRAPHY.caption,
+    ...TYPOGRAPHY.caption1,
     color: '#000000',
     fontSize: 11,
     fontWeight: '600',

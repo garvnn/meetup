@@ -6,10 +6,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../../utils/theme';
-import { FloatingTabBar } from '../../components/FloatingTabBar';
-import { getMyMessages } from '../../lib/data';
-import { GroupChat } from '../../components/GroupChat';
+import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../utils/theme';
+import { FloatingTabBar } from '../components/FloatingTabBar';
+import { getMyMessages } from '../lib/data';
+import { GroupChat } from '../components/GroupChat';
 
 interface MessageThread {
   id: string;

@@ -146,20 +146,21 @@ export function GroupChat({ meetupId, meetupTitle, userId, userName, onBack }: G
     setNewMessage('');
     setSending(true);
 
+    // Optimistically add message to UI
+    const tempMessage: ChatMessage = {
+      id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      meetupId,
+      text: messageText,
+      senderId: userId,
+      senderName: userName,
+      timestamp: new Date(),
+      type: 'chat',
+      isOwn: true,
+      isAnnouncement: false,
+      status: 'sending'
+    };
+
     try {
-      // Optimistically add message to UI
-      const tempMessage: ChatMessage = {
-        id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        meetupId,
-        text: messageText,
-        senderId: userId,
-        senderName: userName,
-        timestamp: new Date(),
-        type: 'chat',
-        isOwn: true,
-        isAnnouncement: false,
-        status: 'sending'
-      };
 
       console.log(`➕ Adding temporary message to UI with ID: ${tempMessage.id}`);
       setMessages(prev => {

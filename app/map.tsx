@@ -2,22 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Dimensions, Alert, Text, TouchableOpacity } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { MeetupPin } from '../../components/MeetupPin';
-import { BottomSheetCard } from '../../components/BottomSheetCard';
-import { FloatingTabBar } from '../../components/FloatingTabBar';
-import { SearchBar } from '../../components/SearchBar';
-import { LocationRequired } from '../../components/LocationRequired';
-import { FindingLocation } from '../../components/FindingLocation';
-import { FAB } from '../../components/FAB';
-import { DeveloperPanel } from '../../components/DeveloperPanel';
-import CreateEvent from '../create-event';
-import { getMyMeetups, initializeMockData, joinMeetup, leaveMeetup, Meetup } from '../../lib/data';
-import { CONFIG } from '../../lib/config';
-import { useTheme } from '../../utils/ThemeContext';
-import { COLORS, SPACING, TYPOGRAPHY, RADII } from '../../utils/theme';
-import { hapticButton } from '../../utils/haptics';
+import { MeetupPin } from '../components/MeetupPin';
+import { BottomSheetCard } from '../components/BottomSheetCard';
+import { FloatingTabBar } from '../components/FloatingTabBar';
+import { SearchBar } from '../components/SearchBar';
+import { LocationRequired } from '../components/LocationRequired';
+import { FindingLocation } from '../components/FindingLocation';
+import { FAB } from '../components/FAB';
+import { DeveloperPanel } from '../components/DeveloperPanel';
+import CreateEvent from './create-event';
+import { getMyMeetups, initializeMockData, joinMeetup, leaveMeetup, Meetup, getMeetupEventImage } from '../lib/data';
+import { CONFIG } from '../lib/config';
+import { useTheme } from '../utils/ThemeContext';
+import { COLORS, SPACING, TYPOGRAPHY, RADII } from '../utils/theme';
+import { hapticButton } from '../utils/haptics';
 import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
@@ -112,7 +113,20 @@ export default function MapPage() {
     try {
       const userId = 'user-1'; // Mock user
       const fetchedMeetups = await getMyMeetups(userId);
-      setMeetups(fetchedMeetups);
+      
+      // Fetch event images for each meetup
+      const meetupsWithImages = await Promise.all(
+        fetchedMeetups.map(async (meetup) => {
+          // Only fetch image if not already set (for mock data)
+          if (!meetup.eventImage) {
+            const eventImage = await getMeetupEventImage(meetup.id);
+            return { ...meetup, eventImage };
+          }
+          return meetup;
+        })
+      );
+      
+      setMeetups(meetupsWithImages);
     } catch (err) {
       console.error('Failed to load meetups:', err);
     }
@@ -351,6 +365,11 @@ export default function MapPage() {
                       attendeeCount={meetup.attendeeCount}
                       title={meetup.title}
                       isSelected={selectedMeetup?.id === meetup.id}
+                      eventImage={meetup.eventImage}
+                      onImagePress={() => {
+                        // Handle image press - could open full screen image viewer
+                        console.log('Image pressed for meetup:', meetup.title);
+                      }}
                     />
                   </Marker>
                 ))}

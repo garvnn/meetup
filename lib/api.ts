@@ -111,7 +111,6 @@ export const apiRequest = async <T = any>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
-    timeout: config.timeout,
   };
   
   try {

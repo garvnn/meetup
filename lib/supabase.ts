@@ -158,10 +158,10 @@ export class SupabaseService {
       memberships: [],
       invite_tokens: [],
       is_ended: false,
-      is_host: item.meetups.host_id === userId,
+      is_host: (item.meetups as any).host_id === userId,
       is_member: true,
       is_soft_banned: false,
-    })) || [];
+    } as unknown as MeetupWithDetails)) || [];
   }
 
   static async getMeetupById(meetupId: string, userId: string): Promise<MeetupWithDetails | null> {
@@ -314,14 +314,14 @@ export class SupabaseService {
     noteTitle?: string,
     noteBody?: string
   ): Promise<File> {
-    const fileExt = file.name.split('.').pop();
+    const fileExt = (file as any).name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `meetups/${meetupId}/${fileName}`;
 
     // Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from('meetup-files')
-      .upload(filePath, file);
+      .upload(filePath, file as any);
 
     if (uploadError) throw uploadError;
 
@@ -333,8 +333,8 @@ export class SupabaseService {
         user_id: userId,
         type,
         storage_path: filePath,
-        filename: file.name,
-        size_bytes: file.size,
+        filename: (file as any).name,
+        size_bytes: (file as any).size,
         note_title: noteTitle,
         note_body: noteBody,
       })

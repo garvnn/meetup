@@ -75,8 +75,8 @@ export class BubbleUtils {
       id: meetup.id,
       title: meetup.title,
       description: meetup.desc || '',
-      latitude: meetup.lat || CONFIG.MAP.DEFAULT_LATITUDE,
-      longitude: meetup.lng || CONFIG.MAP.DEFAULT_LONGITUDE,
+      latitude: meetup.lat || 39.9526, // Default to Philadelphia
+      longitude: meetup.lng || -75.1652,
       radius: this.bubbleRadiusMeters(attendeeCount),
       color: this.whiteToGreen(attendeeCount),
       meetupId: meetup.id,
