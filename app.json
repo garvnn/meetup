@@ -32,6 +32,9 @@
         "projectId": "1db00f0f-b648-4a2c-a791-cedad89c228d"
       }
     },
-    "owner": "garvn"
+    "owner": "garvn",
+    "plugins": [
+      "expo-router"
+    ]
   }
 }

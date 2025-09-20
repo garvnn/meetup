@@ -45,20 +45,23 @@ export const CONFIG = {
     SHARE_PATH: '/share',
   },
 
-  // Map defaults
-  MAP: {
-    DEFAULT_LATITUDE: 39.9526, // Philadelphia (PennApps location)
-    DEFAULT_LONGITUDE: -75.1652,
-    DEFAULT_ZOOM: 15,
+  // Location requirements
+  LOCATION: {
+    REQUIRE_LOCATION: true, // Hard gate - no fallback coordinates
+    TIMEOUT_MS: 10000, // 10 seconds timeout for location fetch
   },
 
   // API endpoints
   API: {
     BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000',
+    NGROK_URL: process.env.EXPO_PUBLIC_NGROK_URL || 'https://8b5ef7372e1f.ngrok-free.app',
     ENDPOINTS: {
       HEALTH: '/health',
       ACCEPT_INVITE: '/accept_invite',
       SOFT_BAN: '/soft_ban',
+      CREATE_MEETUP: '/create_meetup',
+      SEND_MESSAGE: '/send_message',
+      GET_MESSAGES: '/get_messages',
     },
   },
 
@@ -111,4 +114,14 @@ export const getFileType = (filename: string): 'image' | 'pdf' | 'note' | null =
   if (CONFIG.FILES.ALLOWED_TYPES.notes.includes(extension)) return 'note';
   
   return null;
+};
+
+// API URL helper - prioritizes ngrok URL if available
+export const getApiUrl = (): string => {
+  return CONFIG.API.NGROK_URL || CONFIG.API.BASE_URL;
+};
+
+// Check if we're using ngrok
+export const isUsingNgrok = (): boolean => {
+  return !!CONFIG.API.NGROK_URL;
 };

@@ -1,0 +1,27 @@
+🎯 CONNECTION INFO FOR YOUR PENNAPPS APP
+
+📱 Your iPhone Connection:
+- Open Expo Go app on your iPhone
+- Scan the QR code from your terminal
+- OR manually enter: exp://10.251.118.211:8084
+
+🔧 Backend Configuration:
+- Backend URL: https://08c9a01dc673.ngrok-free.app
+- Local Backend: http://localhost:8000
+- Status: ✅ Running and healthy
+
+📋 Steps to Connect:
+1. Make sure your iPhone and computer are on the same WiFi
+2. Run: npx expo start --port 8084
+3. Look for the QR code in your terminal
+4. Scan with iPhone camera or Expo Go app
+5. App will load with backend already configured
+
+🧪 Test Commands:
+- Test backend: curl https://08c9a01dc673.ngrok-free.app/health
+- Test local: curl http://localhost:8000/health
+
+🔍 Troubleshooting:
+- If QR code doesn't show, try: npx expo start --clear
+- If connection fails, check WiFi network
+- If app loads but backend fails, tap app title 5 times to open Developer Panel

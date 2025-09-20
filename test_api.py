@@ -4,57 +4,59 @@ Test script for the PennApps Meetup API
 Run this to test the backend functionality
 """
 
-import requests
-import json
+from typing import Dict, Any
+
+import requests  # type: ignore
 
 API_BASE = "http://localhost:8000"
+TIMEOUT = 10  # seconds
 
-def test_health():
+def test_health() -> None:
     """Test the health endpoint"""
     print("🔍 Testing health endpoint...")
-    response = requests.get(f"{API_BASE}/health")
+    response = requests.get(f"{API_BASE}/health", timeout=TIMEOUT)
     print(f"Status: {response.status_code}")
     print(f"Response: {response.json()}")
     print()
 
-def test_accept_invite():
+def test_accept_invite() -> None:
     """Test accepting an invite"""
     print("🔍 Testing accept invite endpoint...")
-    
+
     # Test with demo token
-    data = {
+    data: Dict[str, str] = {
         "token": "demo123abc",
         "user_id": "test-user-123"
     }
-    
-    response = requests.post(f"{API_BASE}/accept_invite", json=data)
+
+    response = requests.post(f"{API_BASE}/accept_invite", json=data, timeout=TIMEOUT)
     print(f"Status: {response.status_code}")
     print(f"Response: {response.json()}")
     print()
 
-def test_soft_ban():
+def test_soft_ban() -> None:
     """Test soft-ban functionality"""
     print("🔍 Testing soft-ban endpoint...")
-    
-    data = {
+
+    data: Dict[str, str] = {
         "meetup_id": "demo-meetup-123",
         "target_user_id": "bad-user-456",
         "enacted_by": "moderator-789",
         "reason": "Test soft-ban"
     }
-    
-    response = requests.post(f"{API_BASE}/soft_ban", json=data)
+
+    response = requests.post(f"{API_BASE}/soft_ban", json=data, timeout=TIMEOUT)
     print(f"Status: {response.status_code}")
     print(f"Response: {response.json()}")
     print()
 
-def test_debug_data():
+def test_debug_data() -> None:
     """Test debug endpoint to see mock data"""
     print("🔍 Testing debug endpoint...")
-    response = requests.get(f"{API_BASE}/debug/mock-data")
+    response = requests.get(f"{API_BASE}/debug/mock-data", timeout=TIMEOUT)
     print(f"Status: {response.status_code}")
     if response.status_code == 200:
-        data = response.json()
+        data: Dict[str, Any] = response.json()
         print(f"Mock meetups: {len(data.get('meetups', {}))}")
         print(f"Mock invite tokens: {len(data.get('invite_tokens', {}))}")
         print(f"Mock memberships: {len(data.get('memberships', {}))}")
@@ -65,22 +67,28 @@ def test_debug_data():
 if __name__ == "__main__":
     print("🚀 Testing PennApps Meetup API")
     print("=" * 50)
-    
+
     try:
         test_health()
         test_accept_invite()
         test_soft_ban()
         test_debug_data()
-        
+
         print("✅ All tests completed!")
         print("\n📱 Next steps:")
         print("1. Open Expo Go on your phone")
         print("2. Scan the QR code from 'npx expo start'")
         print("3. Test the deep link: pennapps://join/demo123abc")
         print("4. Try creating a meetup and sharing the link")
-        
+
     except requests.exceptions.ConnectionError:
         print("❌ Could not connect to API. Make sure the backend is running:")
         print("   cd python-backend && source venv/bin/activate && uvicorn main:app --reload")
-    except Exception as e:
-        print(f"❌ Error: {e}")
+    except requests.exceptions.Timeout:
+        print("❌ Request timed out. The API might be slow or unresponsive.")
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Request error: {e}")
+    except ValueError as e:
+        print(f"❌ JSON parsing error: {e}")
+    except KeyError as e:
+        print(f"❌ Missing key in response: {e}")

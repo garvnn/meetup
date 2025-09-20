@@ -9,6 +9,7 @@ CREATE TYPE role AS ENUM ('host', 'admin', 'member');
 CREATE TYPE message_type AS ENUM ('chat', 'announcement');
 CREATE TYPE file_type AS ENUM ('image', 'pdf', 'note');
 CREATE TYPE target_type AS ENUM ('user', 'message', 'file');
+CREATE TYPE visibility AS ENUM ('private', 'public');
 
 -- Users table
 CREATE TABLE users (
@@ -27,8 +28,12 @@ CREATE TABLE meetups (
     desc TEXT,
     start_ts TIMESTAMPTZ NOT NULL,
     end_ts TIMESTAMPTZ NOT NULL,
-    lat DOUBLE PRECISION,
-    lng DOUBLE PRECISION,
+    lat DOUBLE PRECISION NOT NULL,
+    lng DOUBLE PRECISION NOT NULL,
+    visibility visibility NOT NULL DEFAULT 'private',
+    public_lat DOUBLE PRECISION,
+    public_lng DOUBLE PRECISION,
+    is_archived BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     ended_at TIMESTAMPTZ,
     attendee_count INTEGER DEFAULT 0,
@@ -164,6 +169,16 @@ CREATE POLICY "Users can view meetups they're members of" ON meetups
         )
     );
 
+CREATE POLICY "Users can view public meetups" ON meetups
+    FOR SELECT USING (visibility = 'public');
+
+CREATE POLICY "Users can create meetups" ON meetups
+    FOR INSERT WITH CHECK (
+        host_id IN (
+            SELECT id FROM users WHERE clerk_id = auth.uid()::text
+        )
+    );
+
 CREATE POLICY "Hosts can update their meetups" ON meetups
     FOR UPDATE USING (
         host_id IN (
@@ -181,6 +196,13 @@ CREATE POLICY "Users can view memberships for their meetups" ON memberships
                     SELECT id FROM users WHERE clerk_id = auth.uid()::text
                 )
             )
+        )
+    );
+
+CREATE POLICY "Users can insert memberships through controlled flow" ON memberships
+    FOR INSERT WITH CHECK (
+        user_id IN (
+            SELECT id FROM users WHERE clerk_id = auth.uid()::text
         )
     );
 
@@ -341,6 +363,133 @@ CREATE TRIGGER trigger_update_file_stats
     AFTER INSERT OR UPDATE OR DELETE ON files
     FOR EACH ROW
     EXECUTE FUNCTION update_meetup_file_stats();
+
+-- Function to generate fuzzed coordinates for public meetups
+CREATE OR REPLACE FUNCTION generate_fuzzed_coords(
+    base_lat DOUBLE PRECISION,
+    base_lng DOUBLE PRECISION,
+    meetup_id UUID
+)
+RETURNS TABLE(fuzzed_lat DOUBLE PRECISION, fuzzed_lng DOUBLE PRECISION) AS $$
+DECLARE
+    -- Use meetup_id as seed for deterministic fuzzing
+    seed INTEGER;
+    offset_meters DOUBLE PRECISION;
+    offset_degrees DOUBLE PRECISION;
+BEGIN
+    -- Generate deterministic seed from meetup_id
+    seed := ('x' || substr(meetup_id::text, 1, 8))::bit(32)::int;
+    
+    -- Random offset between 75-100 meters
+    offset_meters := 75 + (seed % 25);
+    
+    -- Convert meters to degrees (approximate)
+    offset_degrees := offset_meters / 111000.0;
+    
+    -- Apply offset in random direction
+    fuzzed_lat := base_lat + (offset_degrees * cos(radians(seed % 360)));
+    fuzzed_lng := base_lng + (offset_degrees * sin(radians(seed % 360)));
+    
+    RETURN NEXT;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Transactional function to create a meetup
+CREATE OR REPLACE FUNCTION create_meetup(
+    p_host_id UUID,
+    p_title TEXT,
+    p_desc TEXT DEFAULT NULL,
+    p_start_ts TIMESTAMPTZ,
+    p_end_ts TIMESTAMPTZ,
+    p_lat DOUBLE PRECISION,
+    p_lng DOUBLE PRECISION,
+    p_visibility visibility DEFAULT 'private',
+    p_token_ttl_hours INTEGER DEFAULT NULL
+)
+RETURNS TABLE(
+    meetup_id UUID,
+    token TEXT,
+    deep_link TEXT
+) AS $$
+DECLARE
+    v_meetup_id UUID;
+    v_token TEXT;
+    v_deep_link TEXT;
+    v_expires_at TIMESTAMPTZ;
+    v_fuzzed_coords RECORD;
+    v_clamped_end_ts TIMESTAMPTZ;
+BEGIN
+    -- Validate inputs
+    IF p_title IS NULL OR length(trim(p_title)) = 0 THEN
+        RAISE EXCEPTION 'Title is required';
+    END IF;
+    
+    IF length(p_title) > 200 THEN
+        RAISE EXCEPTION 'Title too long (max 200 characters)';
+    END IF;
+    
+    IF p_start_ts >= p_end_ts THEN
+        RAISE EXCEPTION 'Start time must be before end time';
+    END IF;
+    
+    IF p_lat IS NULL OR p_lng IS NULL THEN
+        RAISE EXCEPTION 'Location coordinates are required';
+    END IF;
+    
+    -- Clamp public meetup duration to 6 hours max
+    v_clamped_end_ts := p_end_ts;
+    IF p_visibility = 'public' AND (p_end_ts - p_start_ts) > INTERVAL '6 hours' THEN
+        v_clamped_end_ts := p_start_ts + INTERVAL '6 hours';
+    END IF;
+    
+    -- Generate meetup ID
+    v_meetup_id := uuid_generate_v4();
+    
+    -- Generate fuzzed coordinates for public meetups
+    IF p_visibility = 'public' THEN
+        SELECT * INTO v_fuzzed_coords FROM generate_fuzzed_coords(p_lat, p_lng, v_meetup_id);
+    END IF;
+    
+    -- Insert meetup
+    INSERT INTO meetups (
+        id, host_id, title, desc, start_ts, end_ts, 
+        lat, lng, visibility, public_lat, public_lng
+    ) VALUES (
+        v_meetup_id, p_host_id, p_title, p_desc, p_start_ts, v_clamped_end_ts,
+        p_lat, p_lng, p_visibility, 
+        CASE WHEN p_visibility = 'public' THEN v_fuzzed_coords.fuzzed_lat ELSE NULL END,
+        CASE WHEN p_visibility = 'public' THEN v_fuzzed_coords.fuzzed_lng ELSE NULL END
+    );
+    
+    -- Insert host membership
+    INSERT INTO memberships (meetup_id, user_id, role) 
+    VALUES (v_meetup_id, p_host_id, 'host');
+    
+    -- Generate invite token
+    v_token := encode(gen_random_bytes(16), 'hex');
+    
+    -- Set expiry if specified
+    IF p_token_ttl_hours IS NOT NULL THEN
+        v_expires_at := NOW() + (p_token_ttl_hours || ' hours')::INTERVAL;
+    ELSE
+        v_expires_at := v_clamped_end_ts; -- Valid until meetup ends
+    END IF;
+    
+    -- Insert invite token
+    INSERT INTO invite_tokens (meetup_id, token, expires_at, created_by)
+    VALUES (v_meetup_id, v_token, v_expires_at, p_host_id);
+    
+    -- Generate deep link
+    v_deep_link := 'pennapps://join/' || v_token;
+    
+    -- Return results
+    meetup_id := v_meetup_id;
+    token := v_token;
+    deep_link := v_deep_link;
+    
+    RETURN NEXT;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create storage bucket for meetup files
 INSERT INTO storage.buckets (id, name, public) VALUES ('meetup-files', 'meetup-files', false);
