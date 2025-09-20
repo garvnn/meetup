@@ -125,3 +125,59 @@ This project supports both React Native (Expo) frontend and Python backend devel
 - The original `App.js` is preserved for backward compatibility
 - New development should use the `app/` directory structure with Expo Router
 - Gradually migrate existing functionality to the new structure
+
+## Quickstart
+
+### Frontend Setup
+```bash
+# Install dependencies
+npm install
+
+# Start the Expo development server
+npx expo start
+```
+
+### Backend Setup
+```bash
+# Navigate to backend directory
+cd python-backend
+
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the FastAPI server
+uvicorn main:app --reload
+```
+
+### Database Setup
+1. Create a Supabase project at https://supabase.com
+2. Go to the SQL Editor
+3. Run the schema: Copy and paste `sql/schema.sql` into the editor and execute
+4. Run the seed data: Copy and paste `sql/seed.sql` into the editor and execute
+
+### Environment Configuration
+1. Copy `.env.example` to `.env`
+2. Fill in your Supabase and Clerk credentials
+3. The app will work in mock mode if credentials are not provided
+
+### Testing the App
+1. Launch the app in Expo Go
+2. You should see the Map Home with seeded meetup pins
+3. Test the deep link: `pennapps://join/test123abc`
+4. Try creating a meetup and sharing the invite link
+5. Test reporting functionality and soft-ban behavior
+
+### Key Features to Test
+- ✅ Map with bubbles showing attendee counts
+- ✅ Deep link auto-join functionality
+- ✅ Real-time chat and file sharing
+- ✅ Reporting system with soft-ban enforcement
+- ✅ Meetup archiving when ended
+- ✅ File quota enforcement
+- ✅ Authentication with Clerk (email + phone OTP)

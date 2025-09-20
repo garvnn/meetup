@@ -1,12 +1,14 @@
 {
   "expo": {
     "name": "pennapps-temp",
-    "slug": "pennapps-temp",
+    "slug": "meetup",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "pennapps",
+    "entryPoint": "./app/_layout.tsx",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -24,6 +26,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1db00f0f-b648-4a2c-a791-cedad89c228d"
+      }
+    },
+    "owner": "garvn"
   }
 }

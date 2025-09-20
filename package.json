@@ -9,10 +9,23 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@clerk/clerk-expo": "^2.15.0",
+    "@expo/cli": "^54.0.7",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@supabase/supabase-js": "^2.57.4",
+    "@types/react": "~19.1.10",
     "expo": "~54.0.9",
+    "expo-linking": "^8.0.8",
+    "expo-router": "^6.0.7",
+    "expo-secure-store": "^15.0.7",
     "expo-status-bar": "~3.0.8",
+    "expo-web-browser": "^15.0.7",
     "react": "19.1.0",
-    "react-native": "0.81.4"
+    "react-native": "0.81.4",
+    "react-native-maps": "^1.26.6",
+    "react-native-safe-area-context": "^5.6.1",
+    "react-native-screens": "^4.16.0",
+    "typescript": "~5.9.2"
   },
   "private": true
 }

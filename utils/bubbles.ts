@@ -1,3 +1,5 @@
+import { CONFIG, getBubbleColor, getBubbleSize, getBubbleRadiusMeters } from '../lib/config';
+
 export interface Bubble {
   id: string;
   title: string;
@@ -8,6 +10,7 @@ export interface Bubble {
   color: string;
   meetupId?: string;
   isActive: boolean;
+  attendeeCount: number;
 }
 
 export interface BubbleCluster {
@@ -17,6 +20,7 @@ export interface BubbleCluster {
   };
   bubbles: Bubble[];
   count: number;
+  totalAttendees: number;
 }
 
 export class BubbleUtils {
@@ -48,6 +52,40 @@ export class BubbleUtils {
     return deg * (Math.PI / 180);
   }
 
+  // Convert attendee count to white-to-green color gradient
+  static whiteToGreen(attendeeCount: number): string {
+    return getBubbleColor(attendeeCount);
+  }
+
+  // Get bubble radius in meters based on attendee count
+  static bubbleRadiusMeters(attendeeCount: number): number {
+    return getBubbleRadiusMeters(attendeeCount);
+  }
+
+  // Get bubble size for UI rendering
+  static getBubbleSize(attendeeCount: number): number {
+    return getBubbleSize(attendeeCount);
+  }
+
+  // Create a bubble from meetup data
+  static createBubbleFromMeetup(meetup: any): Bubble {
+    const attendeeCount = meetup.attendee_count || 0;
+    
+    return {
+      id: meetup.id,
+      title: meetup.title,
+      description: meetup.desc || '',
+      latitude: meetup.lat || CONFIG.MAP.DEFAULT_LATITUDE,
+      longitude: meetup.lng || CONFIG.MAP.DEFAULT_LONGITUDE,
+      radius: this.bubbleRadiusMeters(attendeeCount),
+      color: this.whiteToGreen(attendeeCount),
+      meetupId: meetup.id,
+      isActive: !meetup.ended_at,
+      attendeeCount,
+    };
+  }
+
+  // Cluster bubbles based on proximity and attendee count
   static clusterBubbles(bubbles: Bubble[], maxDistance: number = 0.1): BubbleCluster[] {
     const clusters: BubbleCluster[] = [];
     const processed = new Set<string>();
@@ -62,6 +100,7 @@ export class BubbleUtils {
         },
         bubbles: [bubble],
         count: 1,
+        totalAttendees: bubble.attendeeCount,
       };
 
       // Find nearby bubbles
@@ -78,6 +117,7 @@ export class BubbleUtils {
         ) {
           cluster.bubbles.push(otherBubble);
           cluster.count++;
+          cluster.totalAttendees += otherBubble.attendeeCount;
           processed.add(otherBubble.id);
         }
       });
@@ -89,20 +129,103 @@ export class BubbleUtils {
     return clusters;
   }
 
-  static getBubbleColor(meetupId?: string): string {
-    if (!meetupId) return '#007AFF';
+  // Get cluster color based on total attendees
+  static getClusterColor(cluster: BubbleCluster): string {
+    return this.whiteToGreen(cluster.totalAttendees);
+  }
+
+  // Get cluster size based on total attendees
+  static getClusterSize(cluster: BubbleCluster): number {
+    return this.getBubbleSize(cluster.totalAttendees);
+  }
+
+  // Get cluster radius based on total attendees
+  static getClusterRadius(cluster: BubbleCluster): number {
+    return this.bubbleRadiusMeters(cluster.totalAttendees);
+  }
+
+  // Animate bubble growth when attendee count changes
+  static getBubbleAnimationConfig(fromCount: number, toCount: number) {
+    const fromSize = this.getBubbleSize(fromCount);
+    const toSize = this.getBubbleSize(toCount);
+    const fromColor = this.whiteToGreen(fromCount);
+    const toColor = this.whiteToGreen(toCount);
+    const fromRadius = this.bubbleRadiusMeters(fromCount);
+    const toRadius = this.bubbleRadiusMeters(toCount);
+
+    return {
+      size: {
+        from: fromSize,
+        to: toSize,
+        duration: 500,
+      },
+      color: {
+        from: fromColor,
+        to: toColor,
+        duration: 500,
+      },
+      radius: {
+        from: fromRadius,
+        to: toRadius,
+        duration: 500,
+      },
+    };
+  }
+
+  // Get bubble opacity based on activity status
+  static getBubbleOpacity(bubble: Bubble): number {
+    if (!bubble.isActive) return 0.5;
+    if (bubble.attendeeCount === 0) return 0.3;
+    return 1.0;
+  }
+
+  // Get bubble z-index based on attendee count (higher count = higher z-index)
+  static getBubbleZIndex(attendeeCount: number): number {
+    return Math.min(attendeeCount * 10, 1000);
+  }
+
+  // Check if bubble should be visible based on zoom level
+  static shouldShowBubble(attendeeCount: number, zoomLevel: number): boolean {
+    if (attendeeCount > 0) return true; // Always show bubbles with attendees
     
-    // Generate a consistent color based on meetup ID
-    const colors = [
-      '#007AFF', '#34C759', '#FF9500', '#FF3B30',
-      '#AF52DE', '#FF2D92', '#5AC8FA', '#FFCC00'
-    ];
-    
-    const hash = meetupId.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    
-    return colors[Math.abs(hash) % colors.length];
+    // For empty bubbles, only show at higher zoom levels
+    return zoomLevel > 15;
+  }
+
+  // Get bubble label text
+  static getBubbleLabel(attendeeCount: number): string {
+    if (attendeeCount === 0) return '';
+    if (attendeeCount === 1) return '1';
+    if (attendeeCount < 1000) return attendeeCount.toString();
+    return `${Math.floor(attendeeCount / 1000)}k+`;
+  }
+
+  // Get bubble description based on attendee count
+  static getBubbleDescription(attendeeCount: number): string {
+    if (attendeeCount === 0) return 'No attendees yet';
+    if (attendeeCount === 1) return '1 attendee';
+    return `${attendeeCount} attendees`;
+  }
+
+  // Sort bubbles by attendee count (descending)
+  static sortBubblesByAttendees(bubbles: Bubble[]): Bubble[] {
+    return [...bubbles].sort((a, b) => b.attendeeCount - a.attendeeCount);
+  }
+
+  // Filter bubbles by activity status
+  static filterActiveBubbles(bubbles: Bubble[]): Bubble[] {
+    return bubbles.filter(bubble => bubble.isActive);
+  }
+
+  // Get bubbles within a certain distance of a point
+  static getBubblesInRadius(
+    bubbles: Bubble[],
+    centerLat: number,
+    centerLng: number,
+    radiusKm: number
+  ): Bubble[] {
+    return bubbles.filter(bubble => 
+      this.calculateDistance(centerLat, centerLng, bubble.latitude, bubble.longitude) <= radiusKm
+    );
   }
 }
