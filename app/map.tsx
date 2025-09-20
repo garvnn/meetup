@@ -14,7 +14,7 @@ import { FindingLocation } from '../components/FindingLocation';
 import { FAB } from '../components/FAB';
 import { DeveloperPanel } from '../components/DeveloperPanel';
 import CreateEvent from './create-event';
-import { getMyMeetups, initializeMockData, joinMeetup, leaveMeetup, Meetup, getMeetupEventImage } from '../lib/data';
+import { getMyMeetups, initializeMockData, joinMeetup, leaveMeetup, Meetup } from '../lib/data';
 import { CONFIG } from '../lib/config';
 import { useTheme } from '../utils/ThemeContext';
 import { COLORS, SPACING, TYPOGRAPHY, RADII } from '../utils/theme';
@@ -113,20 +113,7 @@ export default function MapPage() {
     try {
       const userId = 'user-1'; // Mock user
       const fetchedMeetups = await getMyMeetups(userId);
-      
-      // Fetch event images for each meetup
-      const meetupsWithImages = await Promise.all(
-        fetchedMeetups.map(async (meetup) => {
-          // Only fetch image if not already set (for mock data)
-          if (!meetup.eventImage) {
-            const eventImage = await getMeetupEventImage(meetup.id);
-            return { ...meetup, eventImage };
-          }
-          return meetup;
-        })
-      );
-      
-      setMeetups(meetupsWithImages);
+      setMeetups(fetchedMeetups);
     } catch (err) {
       console.error('Failed to load meetups:', err);
     }
