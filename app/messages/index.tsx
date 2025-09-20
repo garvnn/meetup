@@ -7,7 +7,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../../utils/theme';
+import { FloatingTabBar } from '../../components/FloatingTabBar';
 import { getMyMessages } from '../../lib/data';
+import { GroupChat } from '../../components/GroupChat';
 
 interface MessageThread {
   id: string;
@@ -23,6 +25,7 @@ interface MessageThread {
 export default function MessagesPage() {
   const [messages, setMessages] = useState<MessageThread[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedGroup, setSelectedGroup] = useState<MessageThread | null>(null);
 
   useEffect(() => {
     loadMessages();
@@ -83,6 +86,29 @@ export default function MessagesPage() {
     }
   };
 
+  const handleGroupSelect = (group: MessageThread) => {
+    setSelectedGroup(group);
+  };
+
+  const handleBackToMessages = () => {
+    setSelectedGroup(null);
+    // Reload messages to get updated unread counts
+    loadMessages();
+  };
+
+  // Show group chat if a group is selected
+  if (selectedGroup) {
+    return (
+      <GroupChat
+        meetupId={selectedGroup.id}
+        meetupTitle={selectedGroup.meetupTitle}
+        userId="user-1" // Mock user ID - in real app this would come from auth
+        userName="You" // Mock user name - in real app this would come from user profile
+        onBack={handleBackToMessages}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -111,7 +137,11 @@ export default function MessagesPage() {
           </View>
         ) : (
           messages.map((message) => (
-            <TouchableOpacity key={message.id} style={styles.messageItem}>
+            <TouchableOpacity 
+              key={message.id} 
+              style={styles.messageItem}
+              onPress={() => handleGroupSelect(message)}
+            >
               <View style={styles.messageContent}>
                 <View style={styles.messageHeader}>
                   <Text style={styles.meetupTitle}>{message.meetupTitle}</Text>
@@ -146,6 +176,9 @@ export default function MessagesPage() {
           ))
         )}
       </ScrollView>
+      
+      {/* Floating Tab Bar */}
+      <FloatingTabBar />
     </SafeAreaView>
   );
 }

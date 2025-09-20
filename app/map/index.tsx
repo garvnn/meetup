@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { MeetupPin } from '../../components/MeetupPin';
 import { BottomSheetCard } from '../../components/BottomSheetCard';
+import { FloatingTabBar } from '../../components/FloatingTabBar';
 import { SearchBar } from '../../components/SearchBar';
 import { LocationRequired } from '../../components/LocationRequired';
 import { FindingLocation } from '../../components/FindingLocation';
@@ -212,9 +213,9 @@ export default function MapPage() {
     setShowCreateEvent(true);
   };
 
-  const handleCreateEventSuccess = (meetupId: string, deepLink: string) => {
+  const handleCreateEventSuccess = async (meetupId: string, deepLink: string) => {
     // Refresh meetups to show the new one
-    loadMeetups();
+    await loadMeetups();
     
     // Center map on the new meetup if we have coordinates
     if (createEventCoords) {
@@ -222,6 +223,8 @@ export default function MapPage() {
         ...prev,
         latitude: createEventCoords.lat,
         longitude: createEventCoords.lng,
+        latitudeDelta: LATITUDE_DELTA,
+        longitudeDelta: LONGITUDE_DELTA,
       } : null);
     }
     
@@ -269,43 +272,45 @@ export default function MapPage() {
 
       if (locationState === 'hasLocation' && region) {
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-            <View style={styles.header}>
-              <TouchableOpacity 
-                onPress={handleTitlePress} 
-                onLongPress={() => {
-                  console.log('Long press detected - opening developer panel');
-                  hapticButton();
-                  setShowDeveloperPanel(true);
-                }}
-                delayLongPress={500}
-                style={styles.titleContainer}
-              >
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Maps</Text>
-              </TouchableOpacity>
-              <View style={styles.headerButtons}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <SafeAreaView style={styles.safeAreaHeader} edges={['top']}>
+              <View style={styles.header}>
                 <TouchableOpacity 
-                  onPress={() => {
-                    console.log('Settings button pressed - opening developer panel');
+                  onPress={handleTitlePress} 
+                  onLongPress={() => {
+                    console.log('Long press detected - opening developer panel');
                     hapticButton();
                     setShowDeveloperPanel(true);
                   }}
-                  style={styles.settingsButton}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  activeOpacity={0.7}
+                  delayLongPress={500}
+                  style={styles.titleContainer}
                 >
-                  <Ionicons name="settings" size={24} color={colors.text} />
+                  <Text style={[styles.headerTitle, { color: colors.text }]}>Maps</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  onPress={handleTestAPI}
-                  style={styles.settingsButton}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="wifi" size={24} color={colors.text} />
-                </TouchableOpacity>
+                <View style={styles.headerButtons}>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      console.log('Settings button pressed - opening developer panel');
+                      hapticButton();
+                      setShowDeveloperPanel(true);
+                    }}
+                    style={styles.settingsButton}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="settings" size={24} color={colors.text} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={handleTestAPI}
+                    style={styles.settingsButton}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="wifi" size={24} color={colors.text} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </SafeAreaView>
             
             <View style={styles.mapContainer}>
               <MapView
@@ -375,7 +380,10 @@ export default function MapPage() {
                 onOpenChat={handleOpenChat}
               />
             </View>
-          </SafeAreaView>
+            
+            {/* Floating Tab Bar */}
+            <FloatingTabBar />
+          </View>
         );
       }
 
@@ -393,6 +401,9 @@ export default function MapPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  safeAreaHeader: {
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',

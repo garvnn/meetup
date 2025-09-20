@@ -47,7 +47,7 @@ export const FAB: React.FC<FABProps> = ({ onPress, disabled = false }) => {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: 40, // Much lower position for better visual balance
+    bottom: 120, // Positioned above the floating tab bar to avoid overlap
     right: SPACING.lg,
     width: 56,
     height: 56,

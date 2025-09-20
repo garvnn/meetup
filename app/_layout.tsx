@@ -16,12 +16,7 @@ function TabNavigator() {
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textTertiary,
           tabBarStyle: {
-            backgroundColor: colors.surface,
-            borderTopColor: colors.textTertiary + '20',
-            borderTopWidth: 1,
-            paddingBottom: 8,
-            paddingTop: 8,
-            height: 88,
+            display: 'none', // Hide the default tab bar
           },
           tabBarLabelStyle: {
             fontSize: 12,

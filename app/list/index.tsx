@@ -7,6 +7,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../../utils/theme';
+import { FloatingTabBar } from '../../components/FloatingTabBar';
 
 export default function ListPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -108,6 +109,9 @@ export default function ListPage() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+      
+      {/* Floating Tab Bar */}
+      <FloatingTabBar />
     </SafeAreaView>
   );
 }
