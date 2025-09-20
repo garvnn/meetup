@@ -41,7 +41,7 @@ class SupabaseService:
         """
         if self.mock_mode:
             # Mock mode
-            return self._mock_create_meetup(request, user_id)
+            return await self._mock_create_meetup(request, user_id)
         
         async with httpx.AsyncClient() as client:
             # Call the create_meetup function
@@ -77,7 +77,7 @@ class SupabaseService:
         """
         if self.mock_mode:
             # Mock mode
-            return self._mock_accept_invite(request)
+            return await self._mock_accept_invite(request)
         
         async with httpx.AsyncClient() as client:
             # First, validate the token
@@ -141,7 +141,7 @@ class SupabaseService:
         """
         if self.mock_mode:
             # Mock mode
-            return self._mock_soft_ban(request)
+            return await self._mock_soft_ban(request)
         
         async with httpx.AsyncClient() as client:
             # Check if meetup exists
@@ -224,7 +224,7 @@ class SupabaseService:
         Returns: (success, message, message_id)
         """
         if self.mock_mode:
-            return self._mock_send_message(request)
+            return await self._mock_send_message(request)
         
         async with httpx.AsyncClient() as client:
             # Check if user is a member of the meetup
@@ -271,7 +271,7 @@ class SupabaseService:
         Returns: (success, message, messages)
         """
         if self.mock_mode:
-            return self._mock_get_messages(request)
+            return await self._mock_get_messages(request)
         
         async with httpx.AsyncClient() as client:
             # Check if user is a member of the meetup

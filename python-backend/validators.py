@@ -33,7 +33,18 @@ class CreateMeetupRequest(BaseModel):
 
     @validator('start_ts')
     def validate_start_not_past(cls, v):
-        if v < datetime.now():
+        # Make both datetimes timezone-aware for comparison
+        now = datetime.now()
+        if v.tzinfo is not None and now.tzinfo is None:
+            # If v is timezone-aware but now is naive, make now timezone-aware
+            from datetime import timezone
+            now = now.replace(tzinfo=timezone.utc)
+        elif v.tzinfo is None and now.tzinfo is not None:
+            # If v is naive but now is timezone-aware, make v timezone-aware
+            from datetime import timezone
+            v = v.replace(tzinfo=timezone.utc)
+        
+        if v < now:
             raise ValueError('Start time cannot be in the past')
         return v
 
