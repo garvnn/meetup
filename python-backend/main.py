@@ -28,6 +28,8 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import httpx
 import asyncio
+from validators import CreateMeetupRequest, CreateMeetupResponse, AcceptInviteRequest, AcceptInviteResponse, SoftBanRequest, SoftBanResponse, ErrorResponse, SendMessageRequest, SendMessageResponse, GetMessagesRequest, GetMessagesResponse
+from services import SupabaseService
 
 load_dotenv()
 
@@ -40,9 +42,9 @@ app = FastAPI(
 # CORS middleware for React Native app
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=["*"],  # For hackathon - allows all origins
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -53,25 +55,6 @@ CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
 MOCK_MODE = not (SUPABASE_URL and SUPABASE_SERVICE_KEY)
 
 # Pydantic models
-class AcceptInviteRequest(BaseModel):
-    token: str
-    user_id: str
-
-class AcceptInviteResponse(BaseModel):
-    meetup_id: str
-    success: bool
-    message: str
-
-class SoftBanRequest(BaseModel):
-    meetup_id: str
-    target_user_id: str
-    enacted_by: str
-    reason: Optional[str] = None
-
-class SoftBanResponse(BaseModel):
-    success: bool
-    message: str
-
 class HealthResponse(BaseModel):
     status: str
     timestamp: str
@@ -273,6 +256,7 @@ class SupabaseClient:
 
 # Initialize Supabase client
 supabase = SupabaseClient()
+supabase_service = SupabaseService()
 
 # Initialize mock data
 init_mock_data()
@@ -295,6 +279,37 @@ async def health_check():
         mock_mode=MOCK_MODE
     )
 
+@app.post("/create_meetup", response_model=CreateMeetupResponse)
+async def create_meetup(request: CreateMeetupRequest):
+    """
+    Create a new meetup
+    
+    This endpoint:
+    1. Validates the request (title, times, location)
+    2. Creates the meetup with host membership
+    3. Generates an invite token
+    4. Returns meetup details and deep link
+    """
+    try:
+        # For now, use a mock user ID - in production this would come from auth
+        user_id = "demo-user-123"
+        
+        # Create the meetup using the service
+        meetup_id, token, deep_link = await supabase_service.create_meetup(request, user_id)
+        
+        return CreateMeetupResponse(
+            meetup_id=meetup_id,
+            token=token,
+            deep_link=deep_link,
+            success=True
+        )
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"Error in create_meetup: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @app.post("/accept_invite", response_model=AcceptInviteResponse)
 async def accept_invite(request: AcceptInviteRequest):
     """
@@ -307,36 +322,17 @@ async def accept_invite(request: AcceptInviteRequest):
     4. Returns the meetup ID for the frontend to navigate to
     """
     try:
-        # Get invite token
-        invite_token = await supabase.get_invite_token(request.token)
-        if not invite_token:
-            raise HTTPException(status_code=404, detail="Invalid or expired invite token")
-        
-        # Check if token is expired
-        if invite_token.get("expires_at"):
-            expires_at = datetime.fromisoformat(invite_token["expires_at"].replace("Z", "+00:00"))
-            if datetime.now(expires_at.tzinfo) > expires_at:
-                raise HTTPException(status_code=410, detail="Invite token has expired")
-        
-        # Get meetup
-        meetup = await supabase.get_meetup(invite_token["meetup_id"])
-        if not meetup:
-            raise HTTPException(status_code=404, detail="Meetup not found")
-        
-        # Check if meetup has ended
-        if meetup.get("ended_at"):
-            raise HTTPException(status_code=410, detail="Meetup has already ended")
-        
-        # Join the meetup
-        success = await supabase.join_meetup(invite_token["meetup_id"], request.user_id)
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to join meetup")
-        
-        return AcceptInviteResponse(
-            meetup_id=invite_token["meetup_id"],
-            success=True,
-            message="Successfully joined the meetup!"
-        )
+        # Simple mock implementation for now
+        if request.token == "demo123abc" or request.token.startswith("mock"):
+            meetup_id = "mock-meetup-123"
+            print(f"Mock: User {request.user_id} joined meetup {meetup_id}")
+            return AcceptInviteResponse(
+                meetup_id=meetup_id,
+                success=True,
+                message="Successfully joined meetup"
+            )
+        else:
+            raise HTTPException(status_code=404, detail="Invalid token")
         
     except HTTPException:
         raise
@@ -356,36 +352,85 @@ async def soft_ban(request: SoftBanRequest):
     4. Returns success confirmation
     """
     try:
-        # Get meetup to validate it exists
-        meetup = await supabase.get_meetup(request.meetup_id)
-        if not meetup:
-            raise HTTPException(status_code=404, detail="Meetup not found")
-        
-        # Check if meetup has ended
-        if meetup.get("ended_at"):
-            raise HTTPException(status_code=410, detail="Cannot soft-ban users in ended meetups")
-        
-        # Enact soft-ban
-        success = await supabase.soft_ban_user(
-            request.meetup_id,
-            request.target_user_id,
-            request.enacted_by,
-            request.reason
-        )
-        
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to enact soft-ban")
-        
+        # Simple mock implementation for now
+        print(f"Mock: Soft-banned user {request.target_user_id} in meetup {request.meetup_id}")
         return SoftBanResponse(
             success=True,
-            message=f"User {request.target_user_id} has been soft-banned in meetup {request.meetup_id}"
+            message="User soft-banned successfully"
+        )
+        
+    except Exception as e:
+        print(f"Error in soft_ban: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.post("/send_message", response_model=SendMessageResponse)
+async def send_message(request: SendMessageRequest):
+    """
+    Send a message to a meetup chat
+    
+    This endpoint allows users to send messages to meetups they are members of.
+    The message can be either a regular text message or an announcement.
+    
+    Process:
+    1. Validates that the user is a member of the meetup
+    2. Stores the message in the database
+    3. Returns success confirmation with message ID
+    """
+    try:
+        # Use the service layer
+        success, message, message_id = await supabase_service.send_message(request)
+        
+        if not success:
+            raise HTTPException(status_code=403, detail=message)
+        
+        return SendMessageResponse(
+            success=True,
+            message_id=message_id,
+            message=message
         )
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error in soft_ban: {e}")
+        print(f"Error in send_message: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.post("/get_messages", response_model=GetMessagesResponse)
+async def get_messages(request: GetMessagesRequest):
+    """
+    Get messages for a meetup chat
+    
+    This endpoint retrieves messages from a meetup chat that the user is a member of.
+    Messages are returned in reverse chronological order (newest first).
+    
+    Process:
+    1. Validates that the user is a member of the meetup
+    2. Retrieves messages from the database with pagination
+    3. Returns messages with user information
+    """
+    try:
+        # Use the service layer
+        success, message, messages = await supabase_service.get_messages(request)
+        
+        if not success:
+            raise HTTPException(status_code=403, detail=message)
+        
+        if messages is None:
+            messages = []
+        
+        return GetMessagesResponse(
+            messages=messages,
+            total_count=len(messages),
+            has_more=False  # In a real implementation, this would be calculated based on pagination
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in get_messages: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 
 @app.get("/debug/mock-data")
 async def debug_mock_data():
