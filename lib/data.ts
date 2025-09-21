@@ -615,6 +615,80 @@ const createMockMeetups = (userLat: number, userLng: number): Meetup[] => {
 
 // Store for mock meetups (only populated when location is available)
 let MOCK_MEETUPS: Meetup[] = [];
+let MOCK_MEETUPS_INITIALIZED = false;
+
+// Function to get a relevant image based on event title/description
+const getEventImage = (title: string, description?: string): string => {
+  const text = (title + ' ' + (description || '')).toLowerCase();
+  console.log('getEventImage: Analyzing text:', text);
+  
+  // Add timestamp to force cache refresh
+  const timestamp = Date.now();
+  
+  // TEST: If title contains "TEST", return a very obvious different image
+  if (text.includes('test')) {
+    console.log('getEventImage: TEST MODE - returning test image');
+    return `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`; // Mountain landscape for testing
+  }
+  
+  // SIMPLE TEST: If title contains "SIMPLE", return a completely different image
+  if (text.includes('simple')) {
+    console.log('getEventImage: SIMPLE TEST MODE - returning simple test image');
+    return `https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`; // Gym/fitness image for testing
+  }
+  
+  // RED TEST: If title contains "RED", return a red image
+  if (text.includes('red')) {
+    console.log('getEventImage: RED TEST MODE - returning red test image');
+    return `https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`; // Red image for testing
+  }
+  
+  // BLUE TEST: If title contains "BLUE", return a blue image
+  if (text.includes('blue')) {
+    console.log('getEventImage: BLUE TEST MODE - returning blue test image');
+    return `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`; // Blue image for testing
+  }
+  
+  // Study/Education related
+  if (text.includes('study') || text.includes('class') || text.includes('learn') || text.includes('course')) {
+    console.log('getEventImage: Selected study image');
+    return `https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`; // Books/study image
+  }
+  
+  // Hackathon/Programming related
+  if (text.includes('hackathon') || text.includes('code') || text.includes('programming') || text.includes('tech') || text.includes('app')) {
+    console.log('getEventImage: Selected hackathon/tech image');
+    return `https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`; // Coding/laptop image
+  }
+  
+  // Coffee/Networking related
+  if (text.includes('coffee') || text.includes('networking') || text.includes('chat') || text.includes('meet')) {
+    console.log('getEventImage: Selected coffee/networking image');
+    return `https://images.unsplash.com/photo-1509048191080-dc6b4c3df1e5?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`; // Coffee cup image
+  }
+  
+  // Food related
+  if (text.includes('food') || text.includes('eat') || text.includes('lunch') || text.includes('dinner') || text.includes('meal')) {
+    console.log('getEventImage: Selected food image');
+    return `https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`;
+  }
+  
+  // Sports/Fitness related
+  if (text.includes('sport') || text.includes('gym') || text.includes('fitness') || text.includes('run') || text.includes('workout')) {
+    console.log('getEventImage: Selected sports/fitness image');
+    return `https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`;
+  }
+  
+  // Music/Entertainment related
+  if (text.includes('music') || text.includes('concert') || text.includes('party') || text.includes('dance') || text.includes('fun')) {
+    console.log('getEventImage: Selected music/entertainment image');
+    return `https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`;
+  }
+  
+  // Default to a general meeting/event image
+  console.log('getEventImage: Selected default image');
+  return `https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=400&h=300&fit=crop&q=80&auto=format&fm=webp&t=${timestamp}`;
+};
 
 const MOCK_MESSAGES: Message[] = [
   // PennApps Demo Meetup messages
@@ -790,14 +864,23 @@ const MOCK_MESSAGES: Message[] = [
 
 // Initialize mock data with user location
 export const initializeMockData = (userLat: number, userLng: number): void => {
-  MOCK_MEETUPS = createMockMeetups(userLat, userLng);
+  // Only initialize once to preserve user-created meetups
+  if (!MOCK_MEETUPS_INITIALIZED) {
+    console.log('Data: Initializing mock data for first time');
+    MOCK_MEETUPS = createMockMeetups(userLat, userLng);
+    MOCK_MEETUPS_INITIALIZED = true;
+  } else {
+    console.log('Data: Mock data already initialized, preserving', MOCK_MEETUPS.length, 'meetups');
+  }
 };
 
 export const getMyMeetups = async (userId?: string): Promise<Meetup[]> => {
   // In a real app, this would query Supabase
   // For now, return mock data (only if location is available)
   await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-  return MOCK_MEETUPS.filter(meetup => meetup.isJoined || meetup.hostId === userId || meetup.wasEverJoined);
+  const filteredMeetups = MOCK_MEETUPS.filter(meetup => meetup.isJoined || meetup.hostId === userId || meetup.wasEverJoined);
+  console.log('Data: getMyMeetups returning', filteredMeetups.length, 'meetups for user', userId);
+  return filteredMeetups;
 };
 
 export const getMyMessages = async (userId?: string): Promise<Meetup[]> => {
@@ -875,6 +958,7 @@ export interface CreateMeetupRequest {
   lng: number;
   visibility: 'private' | 'public';
   token_ttl_hours?: number;
+  photo?: string; // Camera photo URI
 }
 
 // Create meetup response interface
@@ -887,33 +971,95 @@ export interface CreateMeetupResponse {
 
 // Create a new meetup
 export const createMeetup = async (request: CreateMeetupRequest): Promise<CreateMeetupResponse> => {
-  const { createMeetup: apiCreateMeetup } = await import('./api');
-  const response = await apiCreateMeetup(request);
-  
-  // Add the newly created meetup to our local mock data so it appears on the map
-  if (response.success && response.meetup_id) {
+  try {
+    const { createMeetup: apiCreateMeetup } = await import('./api');
+    const response = await apiCreateMeetup(request);
+    
+    console.log('Data: API response for createMeetup:', response);
+    
+    // Add the newly created meetup to our local mock data so it appears on the map
+    if (response.success && response.meetup_id) {
+      const newMeetup: Meetup = {
+        id: response.meetup_id,
+        title: request.title,
+        description: request.desc,
+        startTime: new Date(request.start_ts),
+        endTime: new Date(request.end_ts),
+        latitude: request.lat,
+        longitude: request.lng,
+        locationName: 'Custom Location', // Will be updated with reverse geocoding
+        attendeeCount: 1, // Creator is the first attendee
+        hostId: 'user-1', // Mock user ID - in real app this would come from auth
+        hostName: 'You', // In real app this would come from user profile
+        isJoined: true,
+        isHost: true,
+        wasEverJoined: true,
+        eventImage: (() => {
+          // Use camera photo if provided, otherwise use smart selection
+          if (request.photo) {
+            console.log('createMeetup: Using camera photo:', request.photo);
+            return request.photo;
+          } else {
+            console.log('createMeetup: Selecting image for title:', request.title, 'description:', request.desc);
+            const imageUrl = getEventImage(request.title, request.desc);
+            console.log('createMeetup: Selected image URL:', imageUrl);
+            return imageUrl;
+          }
+        })(), // Use camera photo or smart image selection
+      };
+      
+      // Add to mock meetups array
+      MOCK_MEETUPS.push(newMeetup);
+      console.log('Data: Added new meetup to MOCK_MEETUPS:', newMeetup.title, 'Total meetups:', MOCK_MEETUPS.length);
+    } else {
+      console.log('Data: API call failed or returned no meetup_id, response:', response);
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Data: Error in createMeetup:', error);
+    // Return a mock response for offline mode
+    const mockMeetupId = `mock-${Date.now()}`;
     const newMeetup: Meetup = {
-      id: response.meetup_id,
+      id: mockMeetupId,
       title: request.title,
       description: request.desc,
       startTime: new Date(request.start_ts),
       endTime: new Date(request.end_ts),
       latitude: request.lat,
       longitude: request.lng,
-      locationName: 'Custom Location', // Will be updated with reverse geocoding
-      attendeeCount: 1, // Creator is the first attendee
-      hostId: 'user-1', // Mock user ID - in real app this would come from auth
-      hostName: 'You', // In real app this would come from user profile
+      locationName: 'Custom Location',
+      attendeeCount: 1,
+      hostId: 'user-1',
+      hostName: 'You',
       isJoined: true,
       isHost: true,
       wasEverJoined: true,
+      eventImage: (() => {
+        // Use camera photo if provided, otherwise use smart selection
+        if (request.photo) {
+          console.log('createMeetup (fallback): Using camera photo:', request.photo);
+          return request.photo;
+        } else {
+          console.log('createMeetup (fallback): Selecting image for title:', request.title, 'description:', request.desc);
+          const imageUrl = getEventImage(request.title, request.desc);
+          console.log('createMeetup (fallback): Selected image URL:', imageUrl);
+          return imageUrl;
+        }
+      })(), // Use camera photo or smart image selection
     };
     
-    // Add to mock meetups array
+    // Add to mock meetups array even if API fails
     MOCK_MEETUPS.push(newMeetup);
+    console.log('Data: Added mock meetup due to API error:', newMeetup.title, 'Total meetups:', MOCK_MEETUPS.length);
+    
+    return {
+      success: true,
+      meetup_id: mockMeetupId,
+      token: 'mock-token',
+      deep_link: 'pennapps://join/mock-token',
+    };
   }
-  
-  return response;
 };
 
 // Local storage keys

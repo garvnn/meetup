@@ -20,6 +20,7 @@ import { useTheme } from '../utils/ThemeContext';
 import { COLORS, SPACING, TYPOGRAPHY, RADII } from '../utils/theme';
 import { hapticButton } from '../utils/haptics';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { openGoogleCalendar } from '../utils/calendar';
 
 const { width, height } = Dimensions.get('window');
@@ -83,6 +84,15 @@ export default function MapPage() {
   useEffect(() => {
     checkLocationAndInitialize();
   }, []);
+
+  // Refresh data when tab becomes active
+  useFocusEffect(
+    React.useCallback(() => {
+      if (locationState === 'hasLocation') {
+        loadMeetups();
+      }
+    }, [locationState])
+  );
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -208,6 +218,7 @@ export default function MapPage() {
     try {
       const userId = 'user-1'; // Mock user
       const fetchedMeetups = await getMyMeetups(userId);
+      console.log('Map: Loaded meetups:', fetchedMeetups.length, 'events');
       setMeetups(fetchedMeetups);
     } catch (err) {
       console.error('Failed to load meetups:', err);
@@ -244,7 +255,11 @@ export default function MapPage() {
   };
 
   const handlePinPress = (meetup: Meetup) => {
-    if (locationState !== 'hasLocation') return;
+    console.log('Map: Pin pressed for meetup:', meetup.title, 'ID:', meetup.id);
+    if (locationState !== 'hasLocation') {
+      console.log('Map: Location state not ready:', locationState);
+      return;
+    }
     
     setSelectedMeetup(meetup);
     hapticButton();
@@ -294,12 +309,34 @@ export default function MapPage() {
 
   const handleAddToCalendar = async (meetup: Meetup) => {
     try {
+      console.log('Map: Adding to calendar - meetup:', meetup.title, 'startTime:', meetup.startTime, 'endTime:', meetup.endTime);
       hapticButton();
       await openGoogleCalendar(meetup);
       Alert.alert('Calendar', 'Opening your calendar app to add this event.');
     } catch (error) {
-      console.error('Failed to open calendar:', error);
-      Alert.alert('Error', 'Could not open calendar app. Please try again.');
+      console.error('Map: Failed to open calendar:', error);
+      
+      // Show a helpful message with the URL as fallback
+      const { generateGoogleCalendarUrl } = await import('../utils/calendar');
+      const calendarUrl = generateGoogleCalendarUrl(meetup);
+      
+      Alert.alert(
+        'Calendar Not Available', 
+        `Could not open calendar app automatically. This might be because you're using Expo Go which has limited URL support.\n\nYou can manually add this event by copying this URL and opening it in your browser:\n\n${calendarUrl}`,
+        [
+          { text: 'Copy URL', onPress: () => {
+            // Try to copy to clipboard if available
+            try {
+              const { Clipboard } = require('react-native');
+              Clipboard.setString(calendarUrl);
+              Alert.alert('Copied!', 'Calendar URL copied to clipboard. Paste it in your browser to add the event.');
+            } catch (clipboardError) {
+              console.log('Clipboard not available:', clipboardError);
+            }
+          }},
+          { text: 'OK', style: 'default' }
+        ]
+      );
     }
   };
 
@@ -325,6 +362,8 @@ export default function MapPage() {
   };
 
   const handleCreateEventSuccess = async (meetupId: string, deepLink: string) => {
+    console.log('Map: Event created successfully, refreshing meetups...', meetupId);
+    
     // Refresh meetups to show the new one
     await loadMeetups();
     
@@ -448,31 +487,34 @@ export default function MapPage() {
                 // Long press to create meetup
                 onLongPress={handleLongPress}
               >
-                {meetupsWithProximity.map(meetup => (
-                  <Marker
-                    key={meetup.id}
-                    coordinate={{ latitude: meetup.latitude, longitude: meetup.longitude }}
-                    onPress={() => handlePinPress(meetup)}
-                    tracksViewChanges={false}
-                    // Disable all callout behavior
-                    calloutEnabled={false}
-                    tappable={true}
-                    // Optimize marker rendering
-                    anchor={{ x: 0.5, y: 0.5 }}
-                    centerOffset={{ x: 0, y: 0 }}
-                  >
-                    <MeetupPin
-                      attendeeCount={meetup.attendeeCount}
-                      title={meetup.title}
-                      isSelected={selectedMeetup?.id === meetup.id}
-                      eventImage={meetup.eventImage}
-                      mapZoom={mapZoom}
-                      distanceFromCenter={meetup.distanceFromCenter}
-                      isNearby={meetup.isNearby}
+                {meetupsWithProximity.map(meetup => {
+                  console.log('Map: Rendering marker for:', meetup.title, 'ID:', meetup.id);
+                  return (
+                    <Marker
+                      key={meetup.id}
+                      coordinate={{ latitude: meetup.latitude, longitude: meetup.longitude }}
                       onPress={() => handlePinPress(meetup)}
-                    />
-                  </Marker>
-                ))}
+                      tracksViewChanges={false}
+                      // Disable all callout behavior
+                      calloutEnabled={false}
+                      tappable={true}
+                      // Optimize marker rendering
+                      anchor={{ x: 0.5, y: 0.5 }}
+                      centerOffset={{ x: 0, y: 0 }}
+                    >
+                      <MeetupPin
+                        attendeeCount={meetup.attendeeCount}
+                        title={meetup.title}
+                        isSelected={selectedMeetup?.id === meetup.id}
+                        eventImage={meetup.eventImage}
+                        mapZoom={mapZoom}
+                        distanceFromCenter={meetup.distanceFromCenter}
+                        isNearby={meetup.isNearby}
+                        onPress={() => handlePinPress(meetup)}
+                      />
+                    </Marker>
+                  );
+                })}
               </MapView>
 
               <View style={styles.searchBarContainer}>

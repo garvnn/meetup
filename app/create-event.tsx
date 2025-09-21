@@ -314,6 +314,7 @@ export default function CreateEvent({ onClose, onSuccess, onOpenDeveloperPanel, 
         lng: initialLng!,
         visibility,
         token_ttl_hours: undefined, // Use default (until meetup ends)
+        photo: selectedPhoto || undefined, // Include camera photo if taken
       };
 
       const result = await createMeetup(request);

@@ -8,7 +8,7 @@ from typing import Dict, Any
 
 import requests  # type: ignore
 
-API_BASE = "https://44854ef13e72.ngrok-free.app"
+API_BASE = "http://localhost:8000"
 TIMEOUT = 10  # seconds
 
 def test_health() -> None:

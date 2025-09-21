@@ -33,6 +33,14 @@ const MeetupPinComponent: React.FC<MeetupPinProps> = ({
   isNearby = false,
   onPress,
 }) => {
+  console.log('MeetupPin: Rendering pin for', title, 'with image:', eventImage);
+  
+  const handlePress = () => {
+    console.log('MeetupPin: Pressed for', title);
+    if (onPress) {
+      onPress();
+    }
+  };
   const bubbleSize = getBubbleSize(attendeeCount);
   const bubbleColor = getBubbleColor(attendeeCount);
   const bubbleOpacity = getBubbleOpacity(attendeeCount);
@@ -65,17 +73,24 @@ const MeetupPinComponent: React.FC<MeetupPinProps> = ({
 
   // Calculate image visibility - prioritize showing images when available
   const shouldShowImage = useMemo(() => {
-    if (!eventImage || imageError) return false;
-    // Show image when we have one and are reasonably close/zoomed
-    // Use very lenient thresholds to prevent flickering
-    return distanceFromCenter < 500 && mapZoom > 2.0;
+    if (!eventImage || imageError) {
+      console.log('MeetupPin: No image or error - eventImage:', !!eventImage, 'imageError:', imageError);
+      return false;
+    }
+    // Show image when we have one - use very lenient thresholds
+    // Show images at almost any zoom level and distance
+    const shouldShow = distanceFromCenter < 2000 && mapZoom > 0.8;
+    console.log('MeetupPin: Image visibility check - distance:', distanceFromCenter, 'zoom:', mapZoom, 'shouldShow:', shouldShow);
+    return shouldShow;
   }, [eventImage, distanceFromCenter, mapZoom, imageError]);
 
   // Calculate bubble visibility - always show as fallback
   const shouldShowBubble = useMemo(() => {
     // Always show bubble as fallback when image is not showing
     // This ensures there's always something visible
-    return !shouldShowImage;
+    const showBubble = !shouldShowImage;
+    console.log('MeetupPin: Bubble visibility - shouldShowImage:', shouldShowImage, 'shouldShowBubble:', showBubble);
+    return showBubble;
   }, [shouldShowImage]);
 
   // Simplified animations to prevent glitching
@@ -113,7 +128,7 @@ const MeetupPinComponent: React.FC<MeetupPinProps> = ({
       {shouldShowImage && (
         <View style={styles.imageContainer}>
           <TouchableOpacity
-            onPress={onPress}
+            onPress={handlePress}
             activeOpacity={0.8}
             style={styles.imageTouchable}
           >
@@ -155,7 +170,11 @@ const MeetupPinComponent: React.FC<MeetupPinProps> = ({
       
       {/* Attendee bubble overlay - show when zoomed out or far away */}
       {shouldShowBubble && (
-        <View style={[styles.bubbleContainer, { width: bubbleSize, height: bubbleSize }]}>
+        <TouchableOpacity
+          onPress={handlePress}
+          activeOpacity={0.8}
+          style={[styles.bubbleContainer, { width: bubbleSize, height: bubbleSize }]}
+        >
           <Svg width={bubbleSize} height={bubbleSize} style={styles.bubbleSvg}>
             <Circle
               cx={bubbleSize / 2}
@@ -172,7 +191,7 @@ const MeetupPinComponent: React.FC<MeetupPinProps> = ({
           <View style={styles.countContainer}>
             <Text style={styles.countText}>{attendeeCount}</Text>
           </View>
-        </View>
+        </TouchableOpacity>
       )}
       
     </Animated.View>
