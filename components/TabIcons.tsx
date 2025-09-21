@@ -59,6 +59,10 @@ export const PeopleIcon: React.FC<IconProps> = ({ size = 24, color = COLORS.text
   <Ionicons name="people" size={size} color={color} />
 );
 
+export const CalendarIcon: React.FC<IconProps> = ({ size = 24, color = COLORS.primary }) => (
+  <Ionicons name="calendar" size={size} color={color} />
+);
+
 export const EmptyIcon: React.FC<IconProps> = ({ size = 48, color = COLORS.textTertiary }) => (
   <MaterialIcons name="inbox" size={size} color={color} />
 );

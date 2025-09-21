@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { View, StyleSheet, Dimensions, Alert, Text, TouchableOpacity } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -20,6 +20,7 @@ import { useTheme } from '../utils/ThemeContext';
 import { COLORS, SPACING, TYPOGRAPHY, RADII } from '../utils/theme';
 import { hapticButton } from '../utils/haptics';
 import { useRouter } from 'expo-router';
+import { openGoogleCalendar } from '../utils/calendar';
 
 const { width, height } = Dimensions.get('window');
 const ASPECT_RATIO = width / height;
@@ -27,6 +28,27 @@ const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
 type LocationState = 'needsLocation' | 'findingLocation' | 'hasLocation';
+
+// Utility function to calculate distance between two points in meters
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+          Math.cos(φ1) * Math.cos(φ2) *
+          Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  return R * c; // Distance in meters
+};
+
+// Calculate zoom level from latitude delta
+const calculateZoomLevel = (latitudeDelta: number): number => {
+  return Math.log2(360 / latitudeDelta);
+};
 
 export default function MapPage() {
   const { colors } = useTheme();
@@ -46,6 +68,10 @@ export default function MapPage() {
   const [selectedMeetup, setSelectedMeetup] = useState<Meetup | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Map interaction state
+  const [mapZoom, setMapZoom] = useState(1);
+  const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
+  
   // Create event state
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [createEventCoords, setCreateEventCoords] = useState<{lat: number, lng: number} | null>(null);
@@ -57,6 +83,75 @@ export default function MapPage() {
   useEffect(() => {
     checkLocationAndInitialize();
   }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (regionChangeTimeoutRef.current) {
+        clearTimeout(regionChangeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Debounced region change handler to prevent excessive re-renders
+  const regionChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRegionUpdateRef = useRef<number>(0);
+  
+  const handleRegionChange = useCallback((newRegion: any) => {
+    if (newRegion) {
+      const now = Date.now();
+      
+      // Throttle updates to maximum once every 100ms
+      if (now - lastRegionUpdateRef.current < 100) {
+        return;
+      }
+      
+      // Clear existing timeout
+      if (regionChangeTimeoutRef.current) {
+        clearTimeout(regionChangeTimeoutRef.current);
+      }
+      
+      // Debounce the region change to prevent glitching
+      regionChangeTimeoutRef.current = setTimeout(() => {
+        lastRegionUpdateRef.current = Date.now();
+        setMapCenter({
+          lat: newRegion.latitude,
+          lng: newRegion.longitude,
+        });
+        setMapZoom(calculateZoomLevel(newRegion.latitudeDelta));
+      }, 200); // Increased debounce to 200ms for stability
+    }
+  }, []);
+
+  // Filter meetups based on search query
+  const filteredMeetups = meetups.filter(meetup =>
+    meetup.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    meetup.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Memoize meetup proximity calculations for performance with debouncing
+  const meetupsWithProximity = useMemo(() => {
+    if (!filteredMeetups || filteredMeetups.length === 0) return [];
+    if (!mapCenter) return filteredMeetups.map(meetup => ({ ...meetup, distanceFromCenter: 0, isNearby: false }));
+    
+    return filteredMeetups.map(meetup => {
+      const distanceFromCenter = calculateDistance(
+        mapCenter.lat, 
+        mapCenter.lng, 
+        meetup.latitude, 
+        meetup.longitude
+      );
+      
+      // Restore proper thresholds for photo/bubble switching
+      const isNearby = distanceFromCenter < 200 && mapZoom > 4.0;
+      
+      return {
+        ...meetup,
+        distanceFromCenter,
+        isNearby,
+      };
+    });
+  }, [filteredMeetups, mapCenter, mapZoom]);
 
   const checkLocationAndInitialize = async () => {
     try {
@@ -193,6 +288,17 @@ export default function MapPage() {
     router.push(`/meetup/${meetupId}`);
   };
 
+  const handleAddToCalendar = async (meetup: Meetup) => {
+    try {
+      hapticButton();
+      await openGoogleCalendar(meetup);
+      Alert.alert('Calendar', 'Opening your calendar app to add this event.');
+    } catch (error) {
+      console.error('Failed to open calendar:', error);
+      Alert.alert('Error', 'Could not open calendar app. Please try again.');
+    }
+  };
+
   const handleCreateMeetup = () => {
     if (locationState !== 'hasLocation' || !region) {
       Alert.alert('Location Required', 'Turn on Location to create a meetup.');
@@ -241,11 +347,6 @@ export default function MapPage() {
     setShowCreateEvent(false);
     setCreateEventCoords(null);
   };
-
-  const filteredMeetups = meetups.filter(meetup =>
-    meetup.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    meetup.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   // Show create event screen if needed
   if (showCreateEvent && createEventCoords) {
@@ -318,7 +419,10 @@ export default function MapPage() {
                 provider={PROVIDER_DEFAULT}
                 style={styles.map}
                 region={region}
-                onRegionChangeComplete={setRegion}
+                onRegionChangeComplete={(newRegion) => {
+                  setRegion(newRegion);
+                  handleRegionChange(newRegion);
+                }}
                 showsUserLocation
                 showsMyLocationButton={false}
                 // Remove compass and traffic
@@ -339,7 +443,7 @@ export default function MapPage() {
                 // Long press to create meetup
                 onLongPress={handleLongPress}
               >
-                {filteredMeetups.map(meetup => (
+                {meetupsWithProximity.map(meetup => (
                   <Marker
                     key={meetup.id}
                     coordinate={{ latitude: meetup.latitude, longitude: meetup.longitude }}
@@ -347,16 +451,19 @@ export default function MapPage() {
                     title=""
                     description=""
                     tracksViewChanges={false}
+                    // Optimize marker rendering
+                    anchor={{ x: 0.5, y: 0.5 }}
+                    centerOffset={{ x: 0, y: 0 }}
                   >
                     <MeetupPin
                       attendeeCount={meetup.attendeeCount}
                       title={meetup.title}
                       isSelected={selectedMeetup?.id === meetup.id}
                       eventImage={meetup.eventImage}
-                      onImagePress={() => {
-                        // Handle image press - could open full screen image viewer
-                        console.log('Image pressed for meetup:', meetup.title);
-                      }}
+                      mapZoom={mapZoom}
+                      distanceFromCenter={meetup.distanceFromCenter}
+                      isNearby={meetup.isNearby}
+                      onPress={() => handlePinPress(meetup)}
                     />
                   </Marker>
                 ))}
@@ -384,6 +491,7 @@ export default function MapPage() {
                 onLeave={handleLeaveMeetup}
                 onShare={handleShareMeetup}
                 onOpenChat={handleOpenChat}
+                onAddToCalendar={handleAddToCalendar}
               />
             </View>
             

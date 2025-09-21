@@ -33,9 +33,9 @@ export default function PastEventsPage() {
       date: 'Dec 15, 2024',
       attendeeCount: 25,
       photos: [
-        'https://picsum.photos/300/200?random=1',
-        'https://picsum.photos/300/200?random=2',
-        'https://picsum.photos/300/200?random=3',
+        'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
+        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
+        'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
       ],
       files: [
         { name: 'Project_Presentation.pdf', type: 'pdf', size: '2.3 MB' },
@@ -50,8 +50,8 @@ export default function PastEventsPage() {
       date: 'Dec 10, 2024',
       attendeeCount: 12,
       photos: [
-        'https://picsum.photos/300/200?random=4',
-        'https://picsum.photos/300/200?random=5',
+        'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
+        'https://images.unsplash.com/photo-1555529669-2269763671c0?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
       ],
       files: [
         { name: 'Study_Notes.pdf', type: 'pdf', size: '1.2 MB' },
@@ -67,7 +67,7 @@ export default function PastEventsPage() {
       date: 'Dec 8, 2024',
       attendeeCount: 8,
       photos: [
-        'https://picsum.photos/300/200?random=6',
+        'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
       ],
       files: [
         { name: 'Contact_List.xlsx', type: 'other', size: '156 KB' },
@@ -122,7 +122,17 @@ export default function PastEventsPage() {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosContainer}>
                   {event.photos.map((photo, index) => (
                     <TouchableOpacity key={index} style={styles.photoItem}>
-                      <Image source={{ uri: photo }} style={styles.photo} />
+                      <Image 
+                        source={{ uri: photo }} 
+                        style={styles.photo}
+                        resizeMode="cover"
+                        quality={100}
+                        priority="high"
+                        progressiveRenderingEnabled={true}
+                        onLoadStart={() => console.log('Past event photo loading started')}
+                        onLoad={() => console.log('Past event photo loaded successfully')}
+                        onError={(error) => console.log('Past event photo load error:', error)}
+                      />
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -246,9 +256,9 @@ const styles = StyleSheet.create({
     marginRight: SPACING.sm,
   },
   photo: {
-    width: 120,
-    height: 80,
-    borderRadius: RADII.sm,
+    width: 160, // Increased from 120
+    height: 120, // Increased from 80
+    borderRadius: RADII.md, // Increased from sm
   },
   fileItem: {
     flexDirection: 'row',

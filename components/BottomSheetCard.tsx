@@ -6,7 +6,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { ShareIcon, ChatIcon, JoinIcon, LeaveIcon, TimeIcon, LocationIcon, PeopleIcon } from './TabIcons';
+import { ShareIcon, ChatIcon, JoinIcon, LeaveIcon, TimeIcon, LocationIcon, PeopleIcon, CalendarIcon } from './TabIcons';
 import { COLORS, SPACING, RADII, TYPOGRAPHY, SHADOWS } from '../utils/theme';
 import { Meetup } from '../lib/data';
 
@@ -21,6 +21,7 @@ interface BottomSheetCardProps {
   onLeave: (meetupId: string) => void;
   onShare: (meetupId: string) => void;
   onOpenChat: (meetupId: string) => void;
+  onAddToCalendar: (meetup: Meetup) => void;
 }
 
 export const BottomSheetCard: React.FC<BottomSheetCardProps> = ({
@@ -31,6 +32,7 @@ export const BottomSheetCard: React.FC<BottomSheetCardProps> = ({
   onLeave,
   onShare,
   onOpenChat,
+  onAddToCalendar,
 }) => {
 
   const handleJoin = () => {
@@ -54,6 +56,12 @@ export const BottomSheetCard: React.FC<BottomSheetCardProps> = ({
   const handleOpenChat = () => {
     if (meetup) {
       onOpenChat(meetup.id);
+    }
+  };
+
+  const handleAddToCalendar = () => {
+    if (meetup) {
+      onAddToCalendar(meetup);
     }
   };
 
@@ -113,6 +121,13 @@ export const BottomSheetCard: React.FC<BottomSheetCardProps> = ({
             </View>
           </View>
 
+          {/* Share Button - Positioned at right edge above actions */}
+          <View style={styles.shareButtonContainer}>
+            <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+              <ShareIcon size={16} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
+
           {/* Actions */}
           <View style={styles.actions}>
             {meetup.isJoined ? (
@@ -122,9 +137,9 @@ export const BottomSheetCard: React.FC<BottomSheetCardProps> = ({
                   <Text style={styles.primaryActionText}>Open Chat</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity style={styles.secondaryAction} onPress={handleShare}>
-                  <ShareIcon size={20} color={COLORS.primary} />
-                  <Text style={styles.secondaryActionText}>Share</Text>
+                <TouchableOpacity style={styles.secondaryAction} onPress={handleAddToCalendar}>
+                  <CalendarIcon size={20} color={COLORS.primary} />
+                  <Text style={styles.secondaryActionText}>Add to Calendar</Text>
                 </TouchableOpacity>
                 
                 {!meetup.isHost && (
@@ -135,10 +150,17 @@ export const BottomSheetCard: React.FC<BottomSheetCardProps> = ({
                 )}
               </>
             ) : (
-              <TouchableOpacity style={styles.primaryAction} onPress={handleJoin}>
-                <JoinIcon size={20} color={COLORS.surface} />
-                <Text style={styles.primaryActionText}>Join Meetup</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity style={styles.primaryAction} onPress={handleJoin}>
+                  <JoinIcon size={20} color={COLORS.surface} />
+                  <Text style={styles.primaryActionText}>Join Meetup</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.secondaryAction} onPress={handleAddToCalendar}>
+                  <CalendarIcon size={20} color={COLORS.primary} />
+                  <Text style={styles.secondaryActionText}>Add to Calendar</Text>
+                </TouchableOpacity>
+              </>
             )}
           </View>
         </View>
@@ -215,13 +237,28 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginLeft: SPACING.sm,
   },
+  shareButtonContainer: {
+    position: 'absolute',
+    top: 220,
+    right: 20,
+    zIndex: 10,
+  },
+  shareButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.2)',
+  },
   actions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: SPACING.sm,
   },
   primaryAction: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -230,6 +267,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     borderRadius: RADII.lg,
     gap: SPACING.sm,
+    flex: 1,
   },
   primaryActionText: {
     ...TYPOGRAPHY.headline,
@@ -245,6 +283,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     borderRadius: RADII.lg,
     gap: SPACING.sm,
+    flex: 1,
   },
   secondaryActionText: {
     ...TYPOGRAPHY.headline,
@@ -260,6 +299,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     borderRadius: RADII.lg,
     gap: SPACING.sm,
+    flex: 1,
   },
   dangerActionText: {
     ...TYPOGRAPHY.headline,
