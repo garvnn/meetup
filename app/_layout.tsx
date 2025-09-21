@@ -74,7 +74,7 @@ function TabNavigator() {
         <Tabs.Screen
           name="past-events"
           options={{
-            title: 'Past',
+            title: 'Past Meetups',
             tabBarIcon: ({ focused }) => (
               <Text style={{ fontSize: 28, opacity: focused ? 1 : 0.6 }}>
                 📸

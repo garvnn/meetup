@@ -1,11 +1,12 @@
 /**
- * Past Events Tab - Gallery of completed meetups with photos and files
+ * Past Meetups Tab - Gallery of completed meetups with photos and files
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../utils/theme';
 import { FloatingTabBar } from '../components/FloatingTabBar';
 
@@ -25,17 +26,17 @@ interface PastEvent {
 }
 
 export default function PastEventsPage() {
-  const [pastEvents] = useState<PastEvent[]>([
+  const [pastEvents, setPastEvents] = useState<PastEvent[]>([
     {
       id: '1',
-      title: 'Hackathon Finale',
-      description: 'Amazing weekend building apps together',
+      title: 'Hackathon',
+      description: 'Fun weekend building apps together',
       date: 'Dec 15, 2024',
       attendeeCount: 25,
       photos: [
-        'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
-        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
-        'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
+        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
+        'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
+        'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
       ],
       files: [
         { name: 'Project_Presentation.pdf', type: 'pdf', size: '2.3 MB' },
@@ -50,8 +51,8 @@ export default function PastEventsPage() {
       date: 'Dec 10, 2024',
       attendeeCount: 12,
       photos: [
-        'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
-        'https://images.unsplash.com/photo-1555529669-2269763671c0?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
+        'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
+        'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
       ],
       files: [
         { name: 'Study_Notes.pdf', type: 'pdf', size: '1.2 MB' },
@@ -67,7 +68,8 @@ export default function PastEventsPage() {
       date: 'Dec 8, 2024',
       attendeeCount: 8,
       photos: [
-        'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
+        'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
+        'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop&q=100&auto=format&fm=webp',
       ],
       files: [
         { name: 'Contact_List.xlsx', type: 'other', size: '156 KB' },
@@ -85,10 +87,29 @@ export default function PastEventsPage() {
     }
   };
 
+  const pickImage = async (eventId: string) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const newPhoto = result.assets[0].uri;
+      setPastEvents(prev => prev.map(event => 
+        event.id === eventId 
+          ? { ...event, photos: [...event.photos, newPhoto] }
+          : event
+      ));
+      Alert.alert('Success', 'Photo added to meetup!');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Past Events</Text>
+        <Text style={styles.headerTitle}>Past Meetups</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -155,6 +176,15 @@ export default function PastEventsPage() {
                 ))}
               </View>
             )}
+
+            {/* Upload Button */}
+            <TouchableOpacity 
+              style={styles.uploadButton}
+              onPress={() => pickImage(event.id)}
+            >
+              <Ionicons name="cloud-upload-outline" size={20} color={COLORS.primary} />
+              <Text style={styles.uploadButtonText}>Upload</Text>
+            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
@@ -283,5 +313,23 @@ const styles = StyleSheet.create({
   fileSize: {
     ...TYPOGRAPHY.caption1,
     color: COLORS.textTertiary,
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.primary + '10',
+    borderRadius: RADII.md,
+    marginTop: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.primary + '30',
+  },
+  uploadButtonText: {
+    ...TYPOGRAPHY.footnote,
+    color: COLORS.primary,
+    marginLeft: SPACING.xs,
+    fontWeight: '600',
   },
 });

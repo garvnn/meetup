@@ -21,13 +21,13 @@ INSERT INTO meetups (
 ) VALUES (
     '660e8400-e29b-41d4-a716-446655440000',
     '550e8400-e29b-41d4-a716-446655440000',
-    'PennApps Hackathon Meetup',
-    'Join us for a coding session and collaboration! Bring your laptops and ideas.',
+    'PennApps XXVI 2025',
+    'PennApps XXVI - Fall 2025 Hackathon! 36-hour coding marathon with free food, workshops, and networking. Open to all students.',
     NOW() + INTERVAL '30 minutes',
     NOW() + INTERVAL '2 hours',
-    39.9526,
-    -75.1652,
-    3
+    39.9505,
+    -75.1910,
+    1200
 );
 
 -- Insert memberships

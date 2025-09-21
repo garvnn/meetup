@@ -63,20 +63,20 @@ const MeetupPinComponent: React.FC<MeetupPinProps> = ({
     return Math.min(zoomScale * distanceFactor, 1.3);
   }, [isNearby, mapZoom, distanceFromCenter]);
 
-  // Calculate image visibility - show when zoomed in and close
+  // Calculate image visibility - prioritize showing images when available
   const shouldShowImage = useMemo(() => {
     if (!eventImage || imageError) return false;
-    // Show image when zoomed in and close enough
-    return distanceFromCenter < 200 && mapZoom > 4.0;
+    // Show image when we have one and are reasonably close/zoomed
+    // Use very lenient thresholds to prevent flickering
+    return distanceFromCenter < 500 && mapZoom > 2.0;
   }, [eventImage, distanceFromCenter, mapZoom, imageError]);
 
-  // Calculate bubble visibility - show when zoomed out or far away
+  // Calculate bubble visibility - always show as fallback
   const shouldShowBubble = useMemo(() => {
-    // Show bubble when:
-    // 1. Image is NOT showing (zoomed out or far away), OR
-    // 2. Image failed to load (fallback)
-    return !shouldShowImage || imageError;
-  }, [shouldShowImage, imageError]);
+    // Always show bubble as fallback when image is not showing
+    // This ensures there's always something visible
+    return !shouldShowImage;
+  }, [shouldShowImage]);
 
   // Simplified animations to prevent glitching
   useEffect(() => {
@@ -290,13 +290,19 @@ const styles = StyleSheet.create({
 // Memoize the component with custom comparison to prevent unnecessary re-renders
 export const MeetupPin = memo(MeetupPinComponent, (prevProps, nextProps) => {
   // Only re-render if these specific props change
+  // Note: isSelected is intentionally excluded to prevent re-renders when selection changes
+  // since it only affects pin styling, not visibility logic
+  
+  // Use more lenient comparison for mapZoom and distanceFromCenter to prevent flickering
+  const mapZoomChanged = Math.abs((prevProps.mapZoom || 0) - (nextProps.mapZoom || 0)) > 0.5;
+  const distanceChanged = Math.abs((prevProps.distanceFromCenter || 0) - (nextProps.distanceFromCenter || 0)) > 50;
+  
   return (
     prevProps.attendeeCount === nextProps.attendeeCount &&
     prevProps.title === nextProps.title &&
-    prevProps.isSelected === nextProps.isSelected &&
     prevProps.eventImage === nextProps.eventImage &&
-    prevProps.mapZoom === nextProps.mapZoom &&
-    prevProps.distanceFromCenter === nextProps.distanceFromCenter &&
+    !mapZoomChanged &&
+    !distanceChanged &&
     prevProps.isNearby === nextProps.isNearby
   );
 });

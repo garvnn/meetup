@@ -13,12 +13,14 @@ import {
   Alert, 
   Share,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { createMeetup, CreateMeetupRequest } from '../lib/data';
 import { checkApiHealth, validateApiUrl } from '../lib/api';
@@ -55,6 +57,10 @@ export default function CreateEvent({ onClose, onSuccess, onOpenDeveloperPanel, 
   // Location states
   const [locationName, setLocationName] = useState<string>('');
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  
+  // Photo states
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   useEffect(() => {
     // Check if we have location
@@ -170,6 +176,85 @@ export default function CreateEvent({ onClose, onSuccess, onOpenDeveloperPanel, 
       const newEndDate = new Date(startDate.getTime() + minutes * 60 * 1000);
       setEndDate(snapToFiveMinutes(newEndDate));
     }
+  };
+
+  // Photo picker functions
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please grant camera roll permissions to upload photos.');
+      return false;
+    }
+    return true;
+  };
+
+  const pickImage = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedPhoto(result.assets[0].uri);
+        hapticSuccess();
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      hapticError();
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please grant camera permissions to take photos.');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedPhoto(result.assets[0].uri);
+        hapticSuccess();
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      hapticError();
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+    }
+  };
+
+  const showPhotoOptions = () => {
+    Alert.alert(
+      'Add Photo',
+      'Choose how you want to add a photo to your meetup',
+      [
+        { text: 'Camera', onPress: takePhoto },
+        { text: 'Photo Library', onPress: pickImage },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
+  const removePhoto = () => {
+    setSelectedPhoto(null);
+    hapticButton();
   };
 
   const validateDuration = (start: Date, end: Date, visibility: 'private' | 'public'): boolean => {
@@ -397,6 +482,35 @@ export default function CreateEvent({ onClose, onSuccess, onOpenDeveloperPanel, 
               numberOfLines={3}
               maxLength={1000}
             />
+          </View>
+
+          {/* Photo Upload */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>Photo (Optional)</Text>
+            {selectedPhoto ? (
+              <View style={styles.photoPreviewContainer}>
+                <Image source={{ uri: selectedPhoto }} style={styles.photoPreview} />
+                <TouchableOpacity
+                  style={styles.removePhotoButton}
+                  onPress={removePhoto}
+                >
+                  <Ionicons name="close-circle" size={24} color={colors.error} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.photoUploadButton, { backgroundColor: colors.surface, borderColor: colors.textTertiary + '30' }]}
+                onPress={() => {
+                  hapticButton();
+                  showPhotoOptions();
+                }}
+              >
+                <Ionicons name="camera" size={24} color={colors.primary} />
+                <Text style={[styles.photoUploadText, { color: colors.text }]}>
+                  Add a photo to your meetup
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Start Time */}
@@ -756,5 +870,38 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  photoUploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADII.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    gap: SPACING.sm,
+  },
+  photoUploadText: {
+    ...TYPOGRAPHY.body,
+    fontWeight: '500',
+  },
+  photoPreviewContainer: {
+    position: 'relative',
+    borderRadius: RADII.lg,
+    overflow: 'hidden',
+  },
+  photoPreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: RADII.lg,
+  },
+  removePhotoButton: {
+    position: 'absolute',
+    top: SPACING.sm,
+    right: SPACING.sm,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 2,
   },
 });

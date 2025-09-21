@@ -13,11 +13,13 @@ export interface Meetup {
   endTime: Date;
   latitude: number;
   longitude: number;
+  locationName?: string;
   attendeeCount: number;
   hostId: string;
   hostName: string;
   isJoined: boolean;
   isHost: boolean;
+  wasEverJoined: boolean; // Track if user was ever a member
   eventImage?: string;
   lastMessage?: {
     text: string;
@@ -36,26 +38,41 @@ export interface Message {
   type: 'chat' | 'announcement';
 }
 
-// Penn campus locations and coordinates
+// Penn campus locations and coordinates with names - Updated with accurate GPS coordinates
 const PENN_LOCATIONS = {
-  // Main campus area
-  collegeHall: { lat: 39.9522, lng: -75.1932 },
-  vanPelt: { lat: 39.9518, lng: -75.1925 },
-  huntsman: { lat: 39.9515, lng: -75.1920 },
-  wharton: { lat: 39.9510, lng: -75.1915 },
-  engineering: { lat: 39.9505, lng: -75.1910 },
-  annenberg: { lat: 39.9500, lng: -75.1905 },
+  // Main campus area - Core academic buildings
+  collegeHall: { lat: 39.9522, lng: -75.1932, name: 'College Hall' },
+  vanPelt: { lat: 39.9518, lng: -75.1925, name: 'Van Pelt Library' },
+  huntsman: { lat: 39.9515, lng: -75.1920, name: 'Huntsman Hall' },
+  wharton: { lat: 39.9510, lng: -75.1915, name: 'Wharton School' },
+  engineering: { lat: 39.9505, lng: -75.1910, name: 'Engineering Quad' },
+  annenberg: { lat: 39.9500, lng: -75.1905, name: 'Annenberg Center' },
+  towne: { lat: 39.9508, lng: -75.1912, name: 'Towne Building' },
+  moore: { lat: 39.9512, lng: -75.1918, name: 'Moore Building' },
+  davidRittenhouse: { lat: 39.9516, lng: -75.1922, name: 'David Rittenhouse Labs' },
   
   // Dining and social areas
-  houstonHall: { lat: 39.9515, lng: -75.1935 },
-  ikeLounge: { lat: 39.9510, lng: -75.1940 },
-  franklinField: { lat: 39.9495, lng: -75.1920 },
-  pennMuseum: { lat: 39.9485, lng: -75.1910 },
+  houstonHall: { lat: 39.9515, lng: -75.1935, name: 'Houston Hall' },
+  ikeLounge: { lat: 39.9510, lng: -75.1940, name: 'Ike Lounge' },
+  franklinField: { lat: 39.9495, lng: -75.1920, name: 'Franklin Field' },
+  pennMuseum: { lat: 39.9485, lng: -75.1910, name: 'Penn Museum' },
+  irvineAuditorium: { lat: 39.9518, lng: -75.1945, name: 'Irvine Auditorium' },
+  harrisonCollegeHouse: { lat: 39.9512, lng: -75.1942, name: 'Harrison College House' },
+  hillCollegeHouse: { lat: 39.9508, lng: -75.1945, name: 'Hill College House' },
+  stoufferCollegeHouse: { lat: 39.9505, lng: -75.1948, name: 'Stouffer College House' },
+  
+  // Libraries and study spaces
+  fisherFineArts: { lat: 39.9519, lng: -75.1928, name: 'Fisher Fine Arts Library' },
+  biotech: { lat: 39.9502, lng: -75.1908, name: 'Biotech Commons' },
+  levinBuilding: { lat: 39.9503, lng: -75.1913, name: 'Levin Building' },
   
   // Off-campus but nearby
-  universityCity: { lat: 39.9525, lng: -75.1950 },
-  rittenhouse: { lat: 39.9495, lng: -75.1720 },
-  centerCity: { lat: 39.9520, lng: -75.1650 },
+  universityCity: { lat: 39.9525, lng: -75.1950, name: 'University City' },
+  rittenhouse: { lat: 39.9495, lng: -75.1720, name: 'Rittenhouse Square' },
+  centerCity: { lat: 39.9520, lng: -75.1650, name: 'Center City' },
+  walnutStreet: { lat: 39.9515, lng: -75.1700, name: 'Walnut Street' },
+  spruceStreet: { lat: 39.9500, lng: -75.1700, name: 'Spruce Street' },
+  locustWalk: { lat: 39.9510, lng: -75.1925, name: 'Locust Walk' },
 };
 
 // Mock data factory - generates realistic Penn meetups
@@ -64,165 +81,534 @@ const createMockMeetups = (userLat: number, userLng: number): Meetup[] => {
   const locations = PENN_LOCATIONS;
   
   return [
+    // Academic Study Groups
     {
       id: '1',
-      title: 'CS 101 Study Group',
-      description: 'Midterm prep session in Van Pelt Library. Bring laptops and study materials!',
-      startTime: new Date(now + 30 * 60 * 1000), // 30 minutes from now
-      endTime: new Date(now + 3 * 60 * 60 * 1000), // 3 hours from now
-      latitude: locations.vanPelt.lat,
-      longitude: locations.vanPelt.lng,
-      attendeeCount: 12,
-      hostId: 'host1',
-      hostName: 'Alex Chen',
-      isJoined: true,
-      isHost: false,
-      eventImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
-      lastMessage: {
-        text: 'Room 219 in Van Pelt - see you there!',
-        timestamp: new Date(now - 15 * 60 * 1000),
-        senderName: 'Alex Chen',
-      },
-    },
-    {
-      id: '2',
-      title: 'Wharton Coffee Chat',
-      description: 'Networking event for business students. Free coffee and pastries provided!',
-      startTime: new Date(now + 60 * 60 * 1000), // 1 hour from now
-      endTime: new Date(now + 2 * 60 * 60 * 1000), // 2 hours from now
-      latitude: locations.wharton.lat,
-      longitude: locations.wharton.lng,
-      attendeeCount: 25,
-      hostId: 'host2',
-      hostName: 'Sarah Johnson',
-      isJoined: false,
-      isHost: false,
-      eventImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
-    },
-    {
-      id: '3',
-      title: 'PennApps Hackathon',
-      description: '48-hour hackathon at the Engineering Quad. Prizes, food, and fun!',
-      startTime: new Date(now + 2 * 60 * 60 * 1000), // 2 hours from now
-      endTime: new Date(now + 50 * 60 * 60 * 1000), // 50 hours from now
+      title: 'PennApps Demo Meetup',
+      description: 'Showcase your hackathon projects and see what others built!',
+      startTime: new Date(now + 15 * 60 * 1000),
+      endTime: new Date(now + 2 * 60 * 60 * 1000),
       latitude: locations.engineering.lat,
       longitude: locations.engineering.lng,
-      attendeeCount: 150,
-      hostId: 'host3',
+      locationName: locations.engineering.name,
+      attendeeCount: 3,
+      hostId: 'host1',
       hostName: 'PennApps Team',
       isJoined: true,
       isHost: false,
+      wasEverJoined: true,
       eventImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
       lastMessage: {
-        text: 'Registration opens in 1 hour!',
+        text: 'Welcome to the PennApps Demo Meetup!',
         timestamp: new Date(now - 10 * 60 * 1000),
         senderName: 'PennApps Team',
       },
     },
     {
-      id: '4',
-      title: 'Annenberg Film Screening',
-      description: 'Student film showcase in the Annenberg Center. Popcorn and drinks provided!',
-      startTime: new Date(now + 4 * 60 * 60 * 1000), // 4 hours from now
-      endTime: new Date(now + 6 * 60 * 60 * 1000), // 6 hours from now
-      latitude: locations.annenberg.lat,
-      longitude: locations.annenberg.lng,
-      attendeeCount: 45,
-      hostId: 'host4',
-      hostName: 'Film Society',
-      isJoined: false,
+      id: '2',
+      title: 'CS 101 Study Group',
+      description: 'Midterm prep session for CS 101 in Van Pelt Library. Focus on recursion, data structures, and algorithms.',
+      startTime: new Date(now + 30 * 60 * 1000),
+      endTime: new Date(now + 3 * 60 * 60 * 1000),
+      latitude: locations.vanPelt.lat,
+      longitude: locations.vanPelt.lng,
+      locationName: locations.vanPelt.name,
+      attendeeCount: 8,
+      hostId: 'host2',
+      hostName: 'Alex Chen',
+      isJoined: true,
       isHost: false,
-      eventImage: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+      wasEverJoined: true,
+      eventImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+      lastMessage: {
+        text: 'Quick question - for the fibonacci sequence, is it better to use recursion or iteration? I\'m getting different performance results',
+        timestamp: new Date(now - 5 * 60 * 1000),
+        senderName: 'Lisa Wang',
+      },
+    },
+    {
+      id: '3',
+      title: 'Coffee Chat',
+      description: 'Casual coffee meetup for networking and conversation. Free coffee provided!',
+      startTime: new Date(now + 45 * 60 * 1000),
+      endTime: new Date(now + 2 * 60 * 60 * 1000),
+      latitude: locations.houstonHall.lat,
+      longitude: locations.houstonHall.lng,
+      locationName: locations.houstonHall.name,
+      attendeeCount: 15,
+      hostId: 'host3',
+      hostName: 'Coffee Club',
+      isJoined: true,
+      isHost: false,
+      wasEverJoined: true,
+      eventImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+      lastMessage: {
+        text: 'See you at the coffee shop!',
+        timestamp: new Date(now - 60 * 60 * 1000),
+        senderName: 'Coffee Club',
+      },
+    },
+    {
+      id: '4',
+      title: 'Private Study Session',
+      description: 'One-on-one study session for advanced topics. By invitation only.',
+      startTime: new Date(now + 3 * 60 * 60 * 1000),
+      endTime: new Date(now + 5 * 60 * 60 * 1000),
+      latitude: locations.vanPelt.lat,
+      longitude: locations.vanPelt.lng,
+      locationName: locations.vanPelt.name,
+      attendeeCount: 2,
+      hostId: 'user7',
+      hostName: 'David Kim',
+      isJoined: true,
+      isHost: false,
+      wasEverJoined: true,
+      eventImage: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+      lastMessage: {
+        text: 'Can we meet at 3pm?',
+        timestamp: new Date(now - 2 * 60 * 60 * 1000),
+        senderName: 'David Kim',
+      },
     },
     {
       id: '5',
-      title: 'Franklin Field Workout',
-      description: 'Group fitness session at Franklin Field. All fitness levels welcome!',
-      startTime: new Date(now + 6 * 60 * 60 * 1000), // 6 hours from now
-      endTime: new Date(now + 7 * 60 * 60 * 1000), // 7 hours from now
-      latitude: locations.franklinField.lat,
-      longitude: locations.franklinField.lng,
-      attendeeCount: 18,
+      title: 'Calculus Study Session',
+      description: 'Math 104 study group in Moore Building. Bring calculators!',
+      startTime: new Date(now + 2 * 60 * 60 * 1000),
+      endTime: new Date(now + 4 * 60 * 60 * 1000),
+      latitude: locations.moore.lat,
+      longitude: locations.moore.lng,
+      locationName: locations.moore.name,
+      attendeeCount: 15,
       hostId: 'host5',
-      hostName: 'Fitness Club',
-      isJoined: false,
-      isHost: false,
-      eventImage: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
-    },
-    {
-      id: '6',
-      title: 'Houston Hall Study Break',
-      description: 'Relaxing study break with board games and snacks in Houston Hall.',
-      startTime: new Date(now + 8 * 60 * 60 * 1000), // 8 hours from now
-      endTime: new Date(now + 10 * 60 * 60 * 1000), // 10 hours from now
-      latitude: locations.houstonHall.lat,
-      longitude: locations.houstonHall.lng,
-      attendeeCount: 22,
-      hostId: 'host6',
-      hostName: 'Student Activities',
+      hostName: 'David Kim',
       isJoined: true,
       isHost: false,
-      eventImage: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+      wasEverJoined: true,
+      eventImage: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+
+    // Wharton Business Events
+    {
+      id: '6',
+      title: 'Wharton Coffee Chat',
+      description: 'Networking event for business students. Free coffee and pastries provided!',
+      startTime: new Date(now + 60 * 60 * 1000),
+      endTime: new Date(now + 2 * 60 * 60 * 1000),
+      latitude: locations.wharton.lat,
+      longitude: locations.wharton.lng,
+      locationName: locations.wharton.name,
+      attendeeCount: 25,
+      hostId: 'host4',
+      hostName: 'Sarah Johnson',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
     },
     {
       id: '7',
-      title: 'Penn Museum Tour',
-      description: 'Guided tour of the Penn Museum with focus on ancient artifacts.',
-      startTime: new Date(now + 12 * 60 * 60 * 1000), // 12 hours from now
-      endTime: new Date(now + 13 * 60 * 60 * 1000), // 13 hours from now
-      latitude: locations.pennMuseum.lat,
-      longitude: locations.pennMuseum.lng,
-      attendeeCount: 30,
-      hostId: 'host7',
-      hostName: 'Museum Staff',
+      title: 'Investment Banking Workshop',
+      description: 'Learn about investment banking careers in Huntsman Hall',
+      startTime: new Date(now + 3 * 60 * 60 * 1000),
+      endTime: new Date(now + 5 * 60 * 60 * 1000),
+      latitude: locations.huntsman.lat,
+      longitude: locations.huntsman.lng,
+      attendeeCount: 40,
+      hostId: 'host5',
+      hostName: 'Wharton Finance Club',
       isJoined: false,
       isHost: false,
-      eventImage: 'https://images.unsplash.com/photo-1594736797933-d0401ba2fe65?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
     },
     {
       id: '8',
-      title: 'Ike Lounge Game Night',
-      description: 'Video game tournament and board game night in the Ike Lounge.',
-      startTime: new Date(now + 14 * 60 * 60 * 1000), // 14 hours from now
-      endTime: new Date(now + 18 * 60 * 60 * 1000), // 18 hours from now
-      latitude: locations.ikeLounge.lat,
-      longitude: locations.ikeLounge.lng,
-      attendeeCount: 35,
-      hostId: 'host8',
-      hostName: 'Gaming Club',
-      isJoined: false,
-      isHost: false,
-      eventImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
-    },
-    {
-      id: '9',
-      title: 'Rittenhouse Square Walk',
-      description: 'Scenic walk through Rittenhouse Square and Center City. Great for photos!',
-      startTime: new Date(now + 20 * 60 * 60 * 1000), // 20 hours from now
-      endTime: new Date(now + 22 * 60 * 60 * 1000), // 22 hours from now
-      latitude: locations.rittenhouse.lat,
-      longitude: locations.rittenhouse.lng,
-      attendeeCount: 15,
-      hostId: 'host9',
-      hostName: 'Photography Club',
-      isJoined: false,
-      isHost: false,
-      eventImage: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
-    },
-    {
-      id: '10',
-      title: 'Huntsman Hall Case Study',
-      description: 'Business case study discussion in Huntsman Hall. Bring your laptops!',
-      startTime: new Date(now + 24 * 60 * 60 * 1000), // 24 hours from now
-      endTime: new Date(now + 26 * 60 * 60 * 1000), // 26 hours from now
-      latitude: locations.huntsman.lat,
-      longitude: locations.huntsman.lng,
-      attendeeCount: 20,
-      hostId: 'host10',
+      title: 'Case Study Competition',
+      description: 'Business case study competition in David Rittenhouse Labs',
+      startTime: new Date(now + 6 * 60 * 60 * 1000),
+      endTime: new Date(now + 8 * 60 * 60 * 1000),
+      latitude: locations.davidRittenhouse.lat,
+      longitude: locations.davidRittenhouse.lng,
+      attendeeCount: 30,
+      hostId: 'host6',
       hostName: 'Business Society',
       isJoined: true,
       isHost: false,
+      wasEverJoined: true,
       eventImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+
+    // Engineering & Tech Events
+    {
+      id: '9',
+      title: 'PennApps XXVI 2025',
+      description: 'PennApps XXVI - Fall 2025 Hackathon! 36-hour coding marathon at the Engineering Quad. Free food, workshops, and networking. Open to all students. Register now!',
+      startTime: new Date('2025-09-19T18:00:00Z'), // Friday 6 PM EST
+      endTime: new Date('2025-09-21T06:00:00Z'),   // Sunday 6 AM EST (36 hours)
+      latitude: locations.engineering.lat,
+      longitude: locations.engineering.lng,
+      locationName: locations.engineering.name,
+      attendeeCount: 1200,
+      hostId: 'host7',
+      hostName: 'PennApps Team',
+      isJoined: true,
+      isHost: false,
+      wasEverJoined: true,
+      eventImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+      lastMessage: {
+        text: 'PennApps XXVI registration is LIVE! 1200+ hackers expected.',
+        timestamp: new Date(now - 10 * 60 * 1000),
+        senderName: 'PennApps Team',
+      },
+    },
+    {
+      id: '10',
+      title: 'Robotics Club Demo',
+      description: 'Student-built robots showcase in Towne Building',
+      startTime: new Date(now + 4 * 60 * 60 * 1000),
+      endTime: new Date(now + 6 * 60 * 60 * 1000),
+      latitude: locations.towne.lat,
+      longitude: locations.towne.lng,
+      attendeeCount: 35,
+      hostId: 'host8',
+      hostName: 'Penn Robotics',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '11',
+      title: 'AI Workshop',
+      description: 'Machine learning workshop in Levin Building',
+      startTime: new Date(now + 8 * 60 * 60 * 1000),
+      endTime: new Date(now + 10 * 60 * 60 * 1000),
+      latitude: locations.levinBuilding.lat,
+      longitude: locations.levinBuilding.lng,
+      attendeeCount: 20,
+      hostId: 'host9',
+      hostName: 'AI Society',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+
+    // Arts & Culture Events
+    {
+      id: '12',
+      title: 'Film Screening',
+      description: 'Student film showcase in the Annenberg Center. Popcorn and drinks provided!',
+      startTime: new Date(now + 4 * 60 * 60 * 1000),
+      endTime: new Date(now + 6 * 60 * 60 * 1000),
+      latitude: locations.annenberg.lat,
+      longitude: locations.annenberg.lng,
+      attendeeCount: 45,
+      hostId: 'host10',
+      hostName: 'Film Society',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '13',
+      title: 'Penn Jazz Ensemble Concert',
+      description: 'Fall semester concert at Irvine Auditorium',
+      startTime: new Date(now + 12 * 60 * 60 * 1000),
+      endTime: new Date(now + 14 * 60 * 60 * 1000),
+      latitude: locations.irvineAuditorium.lat,
+      longitude: locations.irvineAuditorium.lng,
+      attendeeCount: 180,
+      hostId: 'host11',
+      hostName: 'Penn Music',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '14',
+      title: 'Art Gallery Opening',
+      description: 'Student art exhibition in Fisher Fine Arts Library',
+      startTime: new Date(now + 16 * 60 * 60 * 1000),
+      endTime: new Date(now + 18 * 60 * 60 * 1000),
+      latitude: locations.fisherFineArts.lat,
+      longitude: locations.fisherFineArts.lng,
+      attendeeCount: 60,
+      hostId: 'host12',
+      hostName: 'Art Club',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+
+    // Sports & Fitness
+    {
+      id: '15',
+      title: 'Group Workout',
+      description: 'Group fitness session at Franklin Field. All fitness levels welcome!',
+      startTime: new Date(now + 6 * 60 * 60 * 1000),
+      endTime: new Date(now + 7 * 60 * 60 * 1000),
+      latitude: locations.franklinField.lat,
+      longitude: locations.franklinField.lng,
+      attendeeCount: 18,
+      hostId: 'host13',
+      hostName: 'Fitness Club',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '16',
+      title: 'Penn Quakers Basketball Game',
+      description: 'Home game vs Princeton - Ivy League rivalry at the Palestra',
+      startTime: new Date(now + 20 * 60 * 60 * 1000),
+      endTime: new Date(now + 22 * 60 * 60 * 1000),
+      latitude: locations.franklinField.lat,
+      longitude: locations.franklinField.lng,
+      attendeeCount: 1200,
+      hostId: 'host14',
+      hostName: 'Penn Athletics',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '17',
+      title: 'Intramural Soccer',
+      description: 'Intramural soccer game at Franklin Field',
+      startTime: new Date(now + 10 * 60 * 60 * 1000),
+      endTime: new Date(now + 11 * 60 * 60 * 1000),
+      latitude: locations.franklinField.lat,
+      longitude: locations.franklinField.lng,
+      attendeeCount: 22,
+      hostId: 'host15',
+      hostName: 'Intramural Sports',
+      isJoined: true,
+      isHost: false,
+      wasEverJoined: true,
+      eventImage: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+
+    // Social & Gaming Events
+    {
+      id: '16',
+      title: 'Study Break',
+      description: 'Relaxing study break with board games and snacks in Houston Hall.',
+      startTime: new Date(now + 8 * 60 * 60 * 1000),
+      endTime: new Date(now + 10 * 60 * 60 * 1000),
+      latitude: locations.houstonHall.lat,
+      longitude: locations.houstonHall.lng,
+      attendeeCount: 22,
+      hostId: 'host16',
+      hostName: 'Student Activities',
+      isJoined: true,
+      isHost: false,
+      wasEverJoined: true,
+      eventImage: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '17',
+      title: 'Game Night',
+      description: 'Video game tournament and board game night in the Ike Lounge.',
+      startTime: new Date(now + 14 * 60 * 60 * 1000),
+      endTime: new Date(now + 18 * 60 * 60 * 1000),
+      latitude: locations.ikeLounge.lat,
+      longitude: locations.ikeLounge.lng,
+      attendeeCount: 35,
+      hostId: 'host17',
+      hostName: 'Gaming Club',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '18',
+      title: 'Trivia Night',
+      description: 'Weekly trivia night in Harrison College House',
+      startTime: new Date(now + 18 * 60 * 60 * 1000),
+      endTime: new Date(now + 20 * 60 * 60 * 1000),
+      latitude: locations.harrisonCollegeHouse.lat,
+      longitude: locations.harrisonCollegeHouse.lng,
+      attendeeCount: 50,
+      hostId: 'host18',
+      hostName: 'Harrison House',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1606092195730-5d7b9af1efc5?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+
+    // Cultural & International Events
+    {
+      id: '19',
+      title: 'International Students Mixer',
+      description: 'Cultural exchange event in Hill College House',
+      startTime: new Date(now + 22 * 60 * 60 * 1000),
+      endTime: new Date(now + 24 * 60 * 60 * 1000),
+      latitude: locations.hillCollegeHouse.lat,
+      longitude: locations.hillCollegeHouse.lng,
+      attendeeCount: 65,
+      hostId: 'host19',
+      hostName: 'International Students',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '20',
+      title: 'Museum Tour',
+      description: 'Guided tour of the Penn Museum with focus on ancient artifacts.',
+      startTime: new Date(now + 12 * 60 * 60 * 1000),
+      endTime: new Date(now + 13 * 60 * 60 * 1000),
+      latitude: locations.pennMuseum.lat,
+      longitude: locations.pennMuseum.lng,
+      attendeeCount: 30,
+      hostId: 'host20',
+      hostName: 'Museum Staff',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1594736797933-d0401ba2fe65?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '21',
+      title: 'Language Exchange',
+      description: 'Practice different languages with native speakers in Stouffer College House',
+      startTime: new Date(now + 26 * 60 * 60 * 1000),
+      endTime: new Date(now + 28 * 60 * 60 * 1000),
+      latitude: locations.stoufferCollegeHouse.lat,
+      longitude: locations.stoufferCollegeHouse.lng,
+      attendeeCount: 25,
+      hostId: 'host21',
+      hostName: 'Language Club',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+
+    // Off-Campus Events
+    {
+      id: '22',
+      title: 'Scenic Walk',
+      description: 'Scenic walk through Rittenhouse Square and Center City. Great for photos!',
+      startTime: new Date(now + 20 * 60 * 60 * 1000),
+      endTime: new Date(now + 22 * 60 * 60 * 1000),
+      latitude: locations.rittenhouse.lat,
+      longitude: locations.rittenhouse.lng,
+      attendeeCount: 15,
+      hostId: 'host22',
+      hostName: 'Photography Club',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '23',
+      title: 'Food Tour',
+      description: 'Explore Philadelphia\'s best food spots in Center City',
+      startTime: new Date(now + 24 * 60 * 60 * 1000),
+      endTime: new Date(now + 26 * 60 * 60 * 1000),
+      latitude: locations.centerCity.lat,
+      longitude: locations.centerCity.lng,
+      attendeeCount: 20,
+      hostId: 'host23',
+      hostName: 'Food Society',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '24',
+      title: 'Group Shopping',
+      description: 'Group shopping trip to Walnut Street shops',
+      startTime: new Date(now + 28 * 60 * 60 * 1000),
+      endTime: new Date(now + 30 * 60 * 60 * 1000),
+      latitude: locations.walnutStreet.lat,
+      longitude: locations.walnutStreet.lng,
+      attendeeCount: 12,
+      hostId: 'host24',
+      hostName: 'Shopping Club',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+
+    // Special Interest Groups
+    {
+      id: '25',
+      title: 'Debate Society Practice',
+      description: 'Weekly debate practice session in College Hall',
+      startTime: new Date(now + 30 * 60 * 60 * 1000),
+      endTime: new Date(now + 32 * 60 * 60 * 1000),
+      latitude: locations.collegeHall.lat,
+      longitude: locations.collegeHall.lng,
+      attendeeCount: 18,
+      hostId: 'host25',
+      hostName: 'Debate Society',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '26',
+      title: 'Sustainability Club Cleanup',
+      description: 'Campus cleanup and environmental awareness event',
+      startTime: new Date(now + 32 * 60 * 60 * 1000),
+      endTime: new Date(now + 34 * 60 * 60 * 1000),
+      latitude: locations.locustWalk.lat,
+      longitude: locations.locustWalk.lng,
+      attendeeCount: 35,
+      hostId: 'host26',
+      hostName: 'Sustainability Club',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '27',
+      title: 'Pre-Med Study Group',
+      description: 'MCAT prep session for organic chemistry in Biotech Commons',
+      startTime: new Date(now + 34 * 60 * 60 * 1000),
+      endTime: new Date(now + 36 * 60 * 60 * 1000),
+      latitude: locations.biotech.lat,
+      longitude: locations.biotech.lng,
+      attendeeCount: 22,
+      hostId: 'host27',
+      hostName: 'Pre-Med Society',
+      isJoined: true,
+      isHost: false,
+      wasEverJoined: true,
+      eventImage: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
+    },
+    {
+      id: '28',
+      title: 'Political Science Forum',
+      description: 'Discussion on current political events in College Hall',
+      startTime: new Date(now + 36 * 60 * 60 * 1000),
+      endTime: new Date(now + 38 * 60 * 60 * 1000),
+      latitude: locations.collegeHall.lat,
+      longitude: locations.collegeHall.lng,
+      attendeeCount: 30,
+      hostId: 'host28',
+      hostName: 'Political Science Club',
+      isJoined: false,
+      isHost: false,
+      wasEverJoined: false,
+      eventImage: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400&h=300&fit=crop&q=80&auto=format&fm=webp',
     },
   ];
 };
@@ -231,50 +617,174 @@ const createMockMeetups = (userLat: number, userLng: number): Meetup[] => {
 let MOCK_MEETUPS: Meetup[] = [];
 
 const MOCK_MESSAGES: Message[] = [
+  // PennApps Demo Meetup messages
   {
     id: '1',
     meetupId: '1',
-    text: 'Room 219 in Van Pelt - see you there!',
+    text: 'Welcome to the PennApps Demo Meetup!',
     senderId: 'host1',
-    senderName: 'Alex Chen',
-    timestamp: new Date(Date.now() - 15 * 60 * 1000),
+    senderName: 'PennApps Team',
+    timestamp: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
     type: 'announcement',
   },
   {
     id: '2',
     meetupId: '1',
-    text: 'Bring your CS 101 notes and laptops!',
-    senderId: 'host1',
-    senderName: 'Alex Chen',
-    timestamp: new Date(Date.now() - 10 * 60 * 1000),
+    text: 'Looking forward to seeing everyone\'s projects!',
+    senderId: 'user1',
+    senderName: 'Sarah Kim',
+    timestamp: new Date(Date.now() - 8 * 60 * 1000), // 8 minutes ago
     type: 'chat',
   },
   {
     id: '3',
-    meetupId: '3',
-    text: 'Registration opens in 1 hour!',
-    senderId: 'host3',
-    senderName: 'PennApps Team',
-    timestamp: new Date(Date.now() - 10 * 60 * 1000),
-    type: 'announcement',
+    meetupId: '1',
+    text: 'Same here! This is going to be awesome',
+    senderId: 'user2',
+    senderName: 'Mike Johnson',
+    timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+    type: 'chat',
   },
+
+  // CS 101 Study Group conversation - authentic multi-person discussion
   {
     id: '4',
-    meetupId: '3',
-    text: 'Prizes include MacBook Pros and internships!',
-    senderId: 'host3',
-    senderName: 'PennApps Team',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000),
-    type: 'chat',
+    meetupId: '2',
+    text: 'Hey everyone! Welcome to our CS 101 study group. We\'ll be meeting in Van Pelt Library Room 219 at 2pm.',
+    senderId: 'host2',
+    senderName: 'Alex Chen',
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+    type: 'announcement',
   },
   {
     id: '5',
-    meetupId: '6',
-    text: 'Board games and snacks ready in Houston Hall!',
-    senderId: 'host6',
-    senderName: 'Student Activities',
-    timestamp: new Date(Date.now() - 20 * 60 * 1000),
+    meetupId: '2',
+    text: 'Thanks Alex! I\'m struggling with the recursion homework. Anyone else having trouble?',
+    senderId: 'user3',
+    senderName: 'Sarah Kim',
+    timestamp: new Date(Date.now() - 90 * 60 * 1000), // 90 minutes ago
+    type: 'chat',
+  },
+  {
+    id: '6',
+    meetupId: '2',
+    text: 'Same here! The factorial function is confusing me',
+    senderId: 'user4',
+    senderName: 'Mike Johnson',
+    timestamp: new Date(Date.now() - 85 * 60 * 1000), // 85 minutes ago
+    type: 'chat',
+  },
+  {
+    id: '7',
+    meetupId: '2',
+    text: 'I\'m also stuck on the binary search recursion problem',
+    senderId: 'user5',
+    senderName: 'Emma Davis',
+    timestamp: new Date(Date.now() - 80 * 60 * 1000), // 80 minutes ago
+    type: 'chat',
+  },
+  {
+    id: '8',
+    meetupId: '2',
+    text: 'The base case keeps confusing me. When do I stop the recursion?',
+    senderId: 'user6',
+    senderName: 'Lisa Wang',
+    timestamp: new Date(Date.now() - 75 * 60 * 1000), // 75 minutes ago
+    type: 'chat',
+  },
+  {
+    id: '9',
+    meetupId: '2',
+    text: 'I think I understand it but I keep getting stack overflow errors',
+    senderId: 'user7',
+    senderName: 'David Kim',
+    timestamp: new Date(Date.now() - 70 * 60 * 1000), // 70 minutes ago
+    type: 'chat',
+  },
+  {
+    id: '10',
+    meetupId: '2',
+    text: 'Anyone know how to trace through a recursive call step by step?',
+    senderId: 'user3',
+    senderName: 'Sarah Kim',
+    timestamp: new Date(Date.now() - 65 * 60 * 1000), // 65 minutes ago
+    type: 'chat',
+  },
+  {
+    id: '11',
+    meetupId: '2',
+    text: 'I\'m bringing my laptop to work on this together',
+    senderId: 'user4',
+    senderName: 'Mike Johnson',
+    timestamp: new Date(Date.now() - 60 * 60 * 1000), // 60 minutes ago
+    type: 'chat',
+  },
+  {
+    id: '12',
+    meetupId: '2',
+    text: 'Same! Maybe we can debug together',
+    senderId: 'user5',
+    senderName: 'Emma Davis',
+    timestamp: new Date(Date.now() - 55 * 60 * 1000), // 55 minutes ago
+    type: 'chat',
+  },
+  {
+    id: '13',
+    meetupId: '2',
+    text: 'Don\'t forget to bring your laptops and CS 101 textbook!',
+    senderId: 'host2',
+    senderName: 'Alex Chen',
+    timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
     type: 'announcement',
+  },
+  {
+    id: '14',
+    meetupId: '2',
+    text: 'Quick question - for the fibonacci sequence, is it better to use recursion or iteration? I\'m getting different performance results',
+    senderId: 'user6',
+    senderName: 'Lisa Wang',
+    timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+    type: 'chat',
+  },
+
+  // Coffee Chat messages
+  {
+    id: '16',
+    meetupId: '3',
+    text: 'See you at the coffee shop!',
+    senderId: 'host3',
+    senderName: 'Coffee Club',
+    timestamp: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
+    type: 'chat',
+  },
+  {
+    id: '17',
+    meetupId: '3',
+    text: 'Looking forward to it!',
+    senderId: 'user6',
+    senderName: 'Lisa Wang',
+    timestamp: new Date(Date.now() - 55 * 60 * 1000), // 55 minutes ago
+    type: 'chat',
+  },
+
+  // Private Study Session messages
+  {
+    id: '18',
+    meetupId: '4',
+    text: 'Can we meet at 3pm?',
+    senderId: 'user7',
+    senderName: 'David Kim',
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+    type: 'chat',
+  },
+  {
+    id: '19',
+    meetupId: '4',
+    text: 'That works for me!',
+    senderId: 'user-1', // This is "You"
+    senderName: 'You',
+    timestamp: new Date(Date.now() - 115 * 60 * 1000), // 115 minutes ago
+    type: 'chat',
   },
 ];
 
@@ -287,7 +797,7 @@ export const getMyMeetups = async (userId?: string): Promise<Meetup[]> => {
   // In a real app, this would query Supabase
   // For now, return mock data (only if location is available)
   await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-  return MOCK_MEETUPS.filter(meetup => meetup.isJoined || meetup.hostId === userId);
+  return MOCK_MEETUPS.filter(meetup => meetup.isJoined || meetup.hostId === userId || meetup.wasEverJoined);
 };
 
 export const getMyMessages = async (userId?: string): Promise<Meetup[]> => {
@@ -313,7 +823,14 @@ export const joinMeetup = async (meetupId: string, userId: string): Promise<bool
   // In a real app, this would call the API
   const meetup = MOCK_MEETUPS.find(m => m.id === meetupId);
   if (meetup) {
+    // Check if user is already a member
+    if (meetup.isJoined) {
+      return false; // Already joined
+    }
+    
+    // Join the meetup
     meetup.isJoined = true;
+    meetup.wasEverJoined = true;
     meetup.attendeeCount += 1;
     return true;
   }
@@ -324,6 +841,12 @@ export const leaveMeetup = async (meetupId: string, userId: string): Promise<boo
   await new Promise(resolve => setTimeout(resolve, 1000));
   const meetup = MOCK_MEETUPS.find(m => m.id === meetupId);
   if (meetup && meetup.hostId !== userId) {
+    // Check if user is actually a member
+    if (!meetup.isJoined) {
+      return false; // Not a member
+    }
+    
+    // Leave the meetup (but don't remove it from the list)
     meetup.isJoined = false;
     meetup.attendeeCount = Math.max(0, meetup.attendeeCount - 1);
     return true;
@@ -377,11 +900,13 @@ export const createMeetup = async (request: CreateMeetupRequest): Promise<Create
       endTime: new Date(request.end_ts),
       latitude: request.lat,
       longitude: request.lng,
+      locationName: 'Custom Location', // Will be updated with reverse geocoding
       attendeeCount: 1, // Creator is the first attendee
       hostId: 'user-1', // Mock user ID - in real app this would come from auth
       hostName: 'You', // In real app this would come from user profile
       isJoined: true,
       isHost: true,
+      wasEverJoined: true,
     };
     
     // Add to mock meetups array
@@ -656,6 +1181,17 @@ export const sendMessageToMeetup = async (meetupId: string, userId: string, mess
 
 // Get messages for a meetup
 export const getMeetupMessages = async (meetupId: string, userId: string, limit: number = 50, offset: number = 0): Promise<Message[]> => {
+  // For CS 101 Study Group (meetupId '2'), always use mock data for demo
+  if (meetupId === '2') {
+    console.log('Using mock data for CS 101 Study Group demo');
+    const mockMessages = MOCK_MESSAGES.filter(msg => msg.meetupId === meetupId);
+    // Store mock messages locally for future use
+    if (mockMessages.length > 0) {
+      await storeMessagesLocally(meetupId, mockMessages);
+    }
+    return mockMessages.slice(offset, offset + limit);
+  }
+
   // Always load from local storage first for immediate display
   const localMessages = await getMessagesFromLocalStorage(meetupId);
   
@@ -707,6 +1243,17 @@ export const getMeetupMessages = async (meetupId: string, userId: string, limit:
     return mergedMessages.slice(offset, offset + limit);
   } catch (error) {
     console.error('Failed to get messages from API, using local storage:', error);
+    
+    // If local storage is empty, fall back to mock data
+    if (localMessages.length === 0) {
+      console.log('No local messages found, using mock data for meetup:', meetupId);
+      const mockMessages = MOCK_MESSAGES.filter(msg => msg.meetupId === meetupId);
+      // Store mock messages locally for future use
+      if (mockMessages.length > 0) {
+        await storeMessagesLocally(meetupId, mockMessages);
+      }
+      return mockMessages.slice(offset, offset + limit);
+    }
     
     // Return local messages if API fails
     return localMessages.slice(offset, offset + limit);

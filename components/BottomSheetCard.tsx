@@ -112,7 +112,9 @@ export const BottomSheetCard: React.FC<BottomSheetCardProps> = ({
             
             <View style={styles.detailRow}>
               <LocationIcon size={16} color={COLORS.textSecondary} />
-              <Text style={styles.detailText}>Near campus</Text>
+              <Text style={styles.detailText}>
+                {meetup.locationName || 'Near campus'}
+              </Text>
             </View>
             
             <View style={styles.detailRow}>

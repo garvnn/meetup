@@ -142,8 +142,8 @@ export default function MapPage() {
         meetup.longitude
       );
       
-      // Restore proper thresholds for photo/bubble switching
-      const isNearby = distanceFromCenter < 200 && mapZoom > 4.0;
+      // Use consistent thresholds with MeetupPin component
+      const isNearby = distanceFromCenter < 500 && mapZoom > 2.0;
       
       return {
         ...meetup,
@@ -255,28 +255,32 @@ export default function MapPage() {
   };
 
   const handleJoinMeetup = async (meetupId: string) => {
-    Alert.alert('Join Meetup', `Joining meetup ${meetupId}`);
     const success = await joinMeetup(meetupId, 'user-1');
     if (success) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Joined!', 'You have successfully joined the meetup.');
       await loadMeetups();
+      // Update the selected meetup with the new data
+      const updatedMeetup = meetups.find(m => m.id === meetupId);
+      if (updatedMeetup) {
+        setSelectedMeetup(updatedMeetup);
+      }
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Already Joined', 'You are already a member of this meetup.');
     }
   };
 
   const handleLeaveMeetup = async (meetupId: string) => {
-    Alert.alert('Leave Meetup', `Leaving meetup ${meetupId}`);
     const success = await leaveMeetup(meetupId, 'user-1');
     if (success) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Left!', 'You have successfully left the meetup.');
       await loadMeetups();
+      // Update the selected meetup with the new data
+      const updatedMeetup = meetups.find(m => m.id === meetupId);
+      if (updatedMeetup) {
+        setSelectedMeetup(updatedMeetup);
+      }
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Not a Member', 'You are not a member of this meetup.');
     }
   };
 
@@ -428,8 +432,9 @@ export default function MapPage() {
                 // Remove compass and traffic
                 showsCompass={false}
                 showsTraffic={false}
-                // Disable native callouts
+                // Disable native callouts completely
                 showsCallout={false}
+                calloutEnabled={false}
                 // Disable other UI elements we don't want
                 showsBuildings={false}
                 showsIndoors={false}
@@ -448,9 +453,10 @@ export default function MapPage() {
                     key={meetup.id}
                     coordinate={{ latitude: meetup.latitude, longitude: meetup.longitude }}
                     onPress={() => handlePinPress(meetup)}
-                    title=""
-                    description=""
                     tracksViewChanges={false}
+                    // Disable all callout behavior
+                    calloutEnabled={false}
+                    tappable={true}
                     // Optimize marker rendering
                     anchor={{ x: 0.5, y: 0.5 }}
                     centerOffset={{ x: 0, y: 0 }}
