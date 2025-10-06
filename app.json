@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "pennapps-temp",
+    "slug": "meetup",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "pennapps",
+    "entryPoint": "./app/_layout.tsx",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.garvn.meetup"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1db00f0f-b648-4a2c-a791-cedad89c228d"
+      }
+    },
+    "owner": "garvn",
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
