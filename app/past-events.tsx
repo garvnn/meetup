@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../utils/theme';
+import { useTheme } from '../utils/ThemeContext';
 import { FloatingTabBar } from '../components/FloatingTabBar';
 
 interface PastEvent {
@@ -26,6 +27,7 @@ interface PastEvent {
 }
 
 export default function PastEventsPage() {
+  const { colors } = useTheme();
   const [pastEvents, setPastEvents] = useState<PastEvent[]>([
     {
       id: '1',
@@ -107,39 +109,39 @@ export default function PastEventsPage() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Past Meetups</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Past Meetups</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {pastEvents.map((event) => (
-          <View key={event.id} style={styles.eventCard}>
+          <View key={event.id} style={[styles.eventCard, { backgroundColor: colors.surface }]}>
             <View style={styles.eventHeader}>
               <View style={styles.eventTitleContainer}>
-                <Text style={styles.eventTitle}>{event.title}</Text>
+                <Text style={[styles.eventTitle, { color: colors.text }]}>{event.title}</Text>
                 {event.isPrivate && (
                   <View style={styles.privateBadge}>
                     <Text style={styles.privateText}>Private</Text>
                   </View>
                 )}
               </View>
-              <Text style={styles.eventDate}>{event.date}</Text>
+              <Text style={[styles.eventDate, { color: colors.textSecondary }]}>{event.date}</Text>
             </View>
             
-            <Text style={styles.eventDescription}>{event.description}</Text>
+            <Text style={[styles.eventDescription, { color: colors.textSecondary }]}>{event.description}</Text>
             
             <View style={styles.eventStats}>
               <View style={styles.statItem}>
-                <Ionicons name="people" size={16} color={COLORS.textTertiary} />
-                <Text style={styles.statText}>{event.attendeeCount} attended</Text>
+                <Ionicons name="people" size={16} color={colors.textTertiary} />
+                <Text style={[styles.statText, { color: colors.textTertiary }]}>{event.attendeeCount} attended</Text>
               </View>
             </View>
 
             {/* Photos Section */}
             {event.photos.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Photos ({event.photos.length})</Text>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Photos ({event.photos.length})</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosContainer}>
                   {event.photos.map((photo, index) => (
                     <TouchableOpacity key={index} style={styles.photoItem}>
@@ -147,8 +149,6 @@ export default function PastEventsPage() {
                         source={{ uri: photo }} 
                         style={styles.photo}
                         resizeMode="cover"
-                        quality={100}
-                        priority="high"
                         progressiveRenderingEnabled={true}
                         onLoadStart={() => console.log('Past event photo loading started')}
                         onLoad={() => console.log('Past event photo loaded successfully')}
@@ -163,15 +163,15 @@ export default function PastEventsPage() {
             {/* Files Section */}
             {event.files.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Files ({event.files.length})</Text>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Files ({event.files.length})</Text>
                 {event.files.map((file, index) => (
                   <TouchableOpacity key={index} style={styles.fileItem}>
                     <Text style={styles.fileIcon}>{getFileIcon(file.type)}</Text>
                     <View style={styles.fileInfo}>
-                      <Text style={styles.fileName}>{file.name}</Text>
-                      <Text style={styles.fileSize}>{file.size}</Text>
+                      <Text style={[styles.fileName, { color: colors.text }]}>{file.name}</Text>
+                      <Text style={[styles.fileSize, { color: colors.textSecondary }]}>{file.size}</Text>
                     </View>
-                    <Ionicons name="download" size={20} color={COLORS.textTertiary} />
+                    <Ionicons name="download" size={20} color={colors.textTertiary} />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -182,8 +182,8 @@ export default function PastEventsPage() {
               style={styles.uploadButton}
               onPress={() => pickImage(event.id)}
             >
-              <Ionicons name="cloud-upload-outline" size={20} color={COLORS.primary} />
-              <Text style={styles.uploadButtonText}>Upload</Text>
+              <Ionicons name="cloud-upload-outline" size={20} color={colors.primary} />
+              <Text style={[styles.uploadButtonText, { color: colors.text }]}>Upload</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -275,8 +275,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   sectionTitle: {
-    ...TYPOGRAPHY.subheadline,
-    color: COLORS.text,
+    ...TYPOGRAPHY.headline,
+    // color will be set dynamically using colors.textSecondary
     marginBottom: SPACING.sm,
   },
   photosContainer: {
@@ -308,11 +308,11 @@ const styles = StyleSheet.create({
   },
   fileName: {
     ...TYPOGRAPHY.body,
-    color: COLORS.text,
+    // color will be set dynamically using colors.text
   },
   fileSize: {
     ...TYPOGRAPHY.caption1,
-    color: COLORS.textTertiary,
+    // color will be set dynamically using colors.textSecondary
   },
   uploadButton: {
     flexDirection: 'row',
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   },
   uploadButtonText: {
     ...TYPOGRAPHY.footnote,
-    color: COLORS.primary,
+    // color will be set dynamically using colors.text
     marginLeft: SPACING.xs,
     fontWeight: '600',
   },

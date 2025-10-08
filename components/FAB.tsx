@@ -6,6 +6,7 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII, SHADOWS } from '../utils/theme';
+import { useTheme } from '../utils/ThemeContext';
 
 interface FABProps {
   onPress: () => void;
@@ -13,6 +14,8 @@ interface FABProps {
 }
 
 export const FAB: React.FC<FABProps> = ({ onPress, disabled = false }) => {
+  const { colors } = useTheme();
+  
   const handlePress = () => {
     if (disabled) {
       Alert.alert(
@@ -30,7 +33,8 @@ export const FAB: React.FC<FABProps> = ({ onPress, disabled = false }) => {
       style={[
         styles.fab,
         disabled && styles.fabDisabled,
-        SHADOWS.lg
+        SHADOWS.lg,
+        { backgroundColor: disabled ? colors.textTertiary : colors.primary }
       ]}
       onPress={handlePress}
       activeOpacity={0.8}
@@ -38,7 +42,7 @@ export const FAB: React.FC<FABProps> = ({ onPress, disabled = false }) => {
       <Ionicons 
         name="add" 
         size={24} 
-        color={disabled ? COLORS.textTertiary : COLORS.surface} 
+        color={disabled ? colors.textTertiary : colors.surface} 
       />
     </TouchableOpacity>
   );
@@ -47,17 +51,17 @@ export const FAB: React.FC<FABProps> = ({ onPress, disabled = false }) => {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: 120, // Positioned above the floating tab bar to avoid overlap
+    bottom: 130, // Moved down to reduce gap with tab bar
     right: SPACING.lg,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: COLORS.primary,
+    // backgroundColor will be set dynamically using colors.primary
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
   },
   fabDisabled: {
-    backgroundColor: COLORS.textTertiary,
+    // backgroundColor will be set dynamically using colors.textTertiary
   },
 });

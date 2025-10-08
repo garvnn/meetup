@@ -11,9 +11,9 @@ export const COLORS = {
   
   // Background colors
   background: '#F2F2F7',
-  backgroundDark: '#000000',
+  backgroundDark: '#1C1C1E', // iOS-style dark background (softer)
   surface: '#FFFFFF',
-  surfaceDark: '#1C1C1E',
+  surfaceDark: '#2C2C2E', // iOS-style dark surface (more subtle)
   
   // Text colors
   text: '#000000',
@@ -22,6 +22,10 @@ export const COLORS = {
   textDark: '#FFFFFF',
   textSecondaryDark: '#EBEBF5',
   textTertiaryDark: '#8E8E93',
+  
+  // Border colors
+  border: '#C6C6C8',
+  borderDark: '#38383A', // iOS-style dark border (softer)
   
   // Bubble colors (white to green scale)
   bubble: {
@@ -50,6 +54,7 @@ export const getThemeColors = (mode: ThemeMode) => ({
   text: mode === 'dark' ? COLORS.textDark : COLORS.text,
   textSecondary: mode === 'dark' ? COLORS.textSecondaryDark : COLORS.textSecondary,
   textTertiary: mode === 'dark' ? COLORS.textTertiaryDark : COLORS.textTertiary,
+  border: mode === 'dark' ? COLORS.borderDark : COLORS.border,
   primary: COLORS.primary,
   primaryDark: COLORS.primaryDark,
   success: COLORS.success,

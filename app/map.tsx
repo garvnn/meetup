@@ -13,6 +13,7 @@ import { LocationRequired } from '../components/LocationRequired';
 import { FindingLocation } from '../components/FindingLocation';
 import { FAB } from '../components/FAB';
 import { DeveloperPanel } from '../components/DeveloperPanel';
+import { SettingsMenu } from '../components/SettingsMenu';
 import CreateEvent from './create-event';
 import { getMyMeetups, initializeMockData, joinMeetup, leaveMeetup, Meetup } from '../lib/data';
 import { CONFIG } from '../lib/config';
@@ -52,7 +53,7 @@ const calculateZoomLevel = (latitudeDelta: number): number => {
 };
 
 export default function MapPage() {
-  const { colors } = useTheme();
+  const { colors, isDarkMode } = useTheme();
   const router = useRouter();
   
   // Location state machine
@@ -79,6 +80,7 @@ export default function MapPage() {
   
   // Developer panel state
   const [showDeveloperPanel, setShowDeveloperPanel] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [titleTapCount, setTitleTapCount] = useState(0);
 
   useEffect(() => {
@@ -182,10 +184,9 @@ export default function MapPage() {
       // Start finding location
       setLocationState('findingLocation');
 
-      // Get current position with timeout
+      // Get current position
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
-        timeout: CONFIG.LOCATION.TIMEOUT_MS,
       });
 
       const userLat = location.coords.latitude;
@@ -258,14 +259,14 @@ export default function MapPage() {
     }
   };
 
-  const handleTestAPI = async () => {
+  const handleDevConsole = async () => {
     hapticButton();
     try {
-      const { checkApiHealth } = await import('../../lib/api');
+      const { checkApiHealth } = await import('../lib/api');
       const result = await checkApiHealth();
-      Alert.alert('API Test', `Status: ${result.status}\nMessage: ${result.message}`);
+      Alert.alert('Dev Console', `API Status: ${result.status}\nMessage: ${result.message}\n\nBackend: Running\nFrontend: Connected`);
     } catch (error) {
-      Alert.alert('API Test Failed', error instanceof Error ? error.message : 'Unknown error');
+      Alert.alert('Dev Console', `API Status: Offline\nError: ${error instanceof Error ? error.message : 'Unknown error'}\n\nBackend: Not responding\nFrontend: Disconnected`);
     }
   };
 
@@ -433,45 +434,6 @@ export default function MapPage() {
       if (locationState === 'hasLocation' && region) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <SafeAreaView style={styles.safeAreaHeader} edges={['top']}>
-              <View style={styles.header}>
-                <TouchableOpacity 
-                  onPress={handleTitlePress} 
-                  onLongPress={() => {
-                    console.log('Long press detected - opening developer panel');
-                    hapticButton();
-                    setShowDeveloperPanel(true);
-                  }}
-                  delayLongPress={500}
-                  style={styles.titleContainer}
-                >
-                  <Text style={[styles.headerTitle, { color: colors.text }]}>Maps</Text>
-                </TouchableOpacity>
-                <View style={styles.headerButtons}>
-                  <TouchableOpacity 
-                    onPress={() => {
-                      console.log('Settings button pressed - opening developer panel');
-                      hapticButton();
-                      setShowDeveloperPanel(true);
-                    }}
-                    style={styles.settingsButton}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="settings" size={24} color={colors.text} />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={handleTestAPI}
-                    style={styles.settingsButton}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="wifi" size={24} color={colors.text} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </SafeAreaView>
-            
             <View style={styles.mapContainer}>
               <MapView
                 provider={PROVIDER_DEFAULT}
@@ -483,22 +445,66 @@ export default function MapPage() {
                 }}
                 showsUserLocation
                 showsMyLocationButton={false}
-                // Remove compass and traffic
+                mapType={isDarkMode ? 'standard' : 'standard'}
+                customMapStyle={isDarkMode ? [
+                  // Minimal but aggressive dark styling for Apple Maps
+                  {elementType: 'geometry', stylers: [{color: '#000000'}]},
+                  {elementType: 'labels.icon', stylers: [{visibility: 'off'}]},
+                  {elementType: 'labels.text.fill', stylers: [{color: '#FFFFFF'}]},
+                  {elementType: 'labels.text.stroke', stylers: [{color: '#000000', weight: 2}]},
+                  
+                  // Water - pure black
+                  {
+                    featureType: 'water',
+                    elementType: 'geometry',
+                    stylers: [{color: '#000000'}]
+                  },
+                  
+                  // Roads - very dark
+                  {
+                    featureType: 'road',
+                    elementType: 'geometry',
+                    stylers: [{color: '#1a1a1a'}]
+                  },
+                  {
+                    featureType: 'road',
+                    elementType: 'labels.text.fill',
+                    stylers: [{color: '#FFFFFF'}]
+                  },
+                  
+                  // POIs - dark
+                  {
+                    featureType: 'poi',
+                    elementType: 'geometry',
+                    stylers: [{color: '#000000'}]
+                  },
+                  {
+                    featureType: 'poi',
+                    elementType: 'labels.text.fill',
+                    stylers: [{color: '#FFFFFF'}]
+                  },
+                  
+                  // Administrative - dark
+                  {
+                    featureType: 'administrative',
+                    elementType: 'geometry',
+                    stylers: [{color: '#000000'}]
+                  },
+                  {
+                    featureType: 'administrative',
+                    elementType: 'labels.text.fill',
+                    stylers: [{color: '#FFFFFF'}]
+                  }
+                ] : undefined}
+                // Disable all UI elements that might show white
                 showsCompass={false}
                 showsTraffic={false}
-                // Disable native callouts completely
-                showsCallout={false}
-                calloutEnabled={false}
-                // Disable other UI elements we don't want
                 showsBuildings={false}
                 showsIndoors={false}
                 showsPointsOfInterest={false}
                 showsScale={false}
                 showsIndoorLevelPicker={false}
                 // Keep only essential features
-                showsUserLocationButton={false}
-                showsMapTypeControl={false}
-                showsZoomControl={false}
                 // Long press to create meetup
                 onLongPress={handleLongPress}
               >
@@ -511,7 +517,6 @@ export default function MapPage() {
                       onPress={() => handlePinPress(meetup)}
                       tracksViewChanges={false}
                       // Disable all callout behavior
-                      calloutEnabled={false}
                       tappable={true}
                       // Optimize marker rendering
                       anchor={{ x: 0.5, y: 0.5 }}
@@ -536,7 +541,6 @@ export default function MapPage() {
                 <SearchBar
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  onClear={() => setSearchQuery('')}
                   placeholder="Search meetups..."
                 />
               </View>
@@ -558,8 +562,33 @@ export default function MapPage() {
               />
             </View>
             
+            {/* Floating Settings Button */}
+            <TouchableOpacity 
+              onPress={() => {
+                console.log('Settings button pressed - opening settings menu');
+                hapticButton();
+                setShowSettingsMenu(true);
+              }}
+              onLongPress={() => {
+                console.log('Long press detected - opening dev console');
+                handleDevConsole();
+              }}
+              delayLongPress={500}
+              style={[styles.floatingSettingsButton, { backgroundColor: colors.background + 'F0' }]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="settings" size={24} color={colors.text} />
+            </TouchableOpacity>
+            
             {/* Floating Tab Bar */}
             <FloatingTabBar />
+            
+            {/* Settings Menu */}
+            <SettingsMenu
+              isVisible={showSettingsMenu}
+              onClose={() => setShowSettingsMenu(false)}
+            />
           </View>
         );
       }
@@ -579,46 +608,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  safeAreaHeader: {
-    backgroundColor: 'transparent',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.textTertiary + '20',
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    ...TYPOGRAPHY.largeTitle,
-    color: COLORS.text,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  settingsButton: {
-    padding: SPACING.md,
-    borderRadius: RADII.sm,
-    backgroundColor: 'transparent',
-  },
   mapContainer: {
     flex: 1,
     position: 'relative',
+  },
+  floatingSettingsButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
   map: {
     flex: 1,
   },
   searchBarContainer: {
     position: 'absolute',
-    top: SPACING.md,
-    left: SPACING.md,
-    right: SPACING.md,
+    top: 50, // Align with floating settings button
+    left: SPACING.lg,
+    right: 80, // Leave space for floating settings button
     zIndex: 1,
   },
 });

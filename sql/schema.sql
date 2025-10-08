@@ -25,7 +25,7 @@ CREATE TABLE meetups (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     host_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
-    desc TEXT,
+    description TEXT,
     start_ts TIMESTAMPTZ NOT NULL,
     end_ts TIMESTAMPTZ NOT NULL,
     lat DOUBLE PRECISION NOT NULL,
@@ -398,11 +398,11 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION create_meetup(
     p_host_id UUID,
     p_title TEXT,
-    p_desc TEXT DEFAULT NULL,
     p_start_ts TIMESTAMPTZ,
     p_end_ts TIMESTAMPTZ,
     p_lat DOUBLE PRECISION,
     p_lng DOUBLE PRECISION,
+    p_desc TEXT DEFAULT NULL,
     p_visibility visibility DEFAULT 'private',
     p_token_ttl_hours INTEGER DEFAULT NULL
 )
@@ -452,7 +452,7 @@ BEGIN
     
     -- Insert meetup
     INSERT INTO meetups (
-        id, host_id, title, desc, start_ts, end_ts, 
+        id, host_id, title, description, start_ts, end_ts, 
         lat, lng, visibility, public_lat, public_lng
     ) VALUES (
         v_meetup_id, p_host_id, p_title, p_desc, p_start_ts, v_clamped_end_ts,

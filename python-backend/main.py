@@ -291,8 +291,8 @@ async def create_meetup(request: CreateMeetupRequest):
     4. Returns meetup details and deep link
     """
     try:
-        # For now, use a mock user ID - in production this would come from auth
-        user_id = "demo-user-123"
+        # For now, use a proper UUID - in production this would come from auth
+        user_id = "550e8400-e29b-41d4-a716-446655440000"
         
         # Create the meetup using the service
         meetup_id, token, deep_link = await supabase_service.create_meetup(request, user_id)
@@ -322,17 +322,17 @@ async def accept_invite(request: AcceptInviteRequest):
     4. Returns the meetup ID for the frontend to navigate to
     """
     try:
-        # Simple mock implementation for now
-        if request.token == "demo123abc" or request.token.startswith("mock"):
-            meetup_id = "mock-meetup-123"
-            print(f"Mock: User {request.user_id} joined meetup {meetup_id}")
-            return AcceptInviteResponse(
-                meetup_id=meetup_id,
-                success=True,
-                message="Successfully joined meetup"
-            )
-        else:
-            raise HTTPException(status_code=404, detail="Invalid token")
+        # Use the service layer
+        success, message, meetup_id = await supabase_service.accept_invite(request)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail=message)
+        
+        return AcceptInviteResponse(
+            meetup_id=meetup_id,
+            success=True,
+            message=message
+        )
         
     except HTTPException:
         raise
@@ -352,13 +352,19 @@ async def soft_ban(request: SoftBanRequest):
     4. Returns success confirmation
     """
     try:
-        # Simple mock implementation for now
-        print(f"Mock: Soft-banned user {request.target_user_id} in meetup {request.meetup_id}")
+        # Use the service layer
+        success, message = await supabase_service.soft_ban_user(request)
+        
+        if not success:
+            raise HTTPException(status_code=400, detail=message)
+        
         return SoftBanResponse(
             success=True,
-            message="User soft-banned successfully"
+            message=message
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error in soft_ban: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

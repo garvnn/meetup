@@ -7,6 +7,7 @@ import { View, TextInput, TouchableOpacity, StyleSheet, Animated } from 'react-n
 import { BlurView } from 'expo-blur';
 import { SearchIcon, CloseIcon } from './TabIcons';
 import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../utils/theme';
+import { useTheme } from '../utils/ThemeContext';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -25,6 +26,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onBlur,
   style,
 }) => {
+  const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
 
   const handleFocus = () => {
@@ -44,12 +46,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <View style={[styles.container, style]}>
       <BlurView intensity={80} style={styles.blurContainer}>
-        <View style={styles.content}>
-          <SearchIcon size={20} color={COLORS.textSecondary} />
+        <View style={[styles.content, { backgroundColor: colors.surface }]}>
+          <SearchIcon size={20} color={colors.textSecondary} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             placeholder={placeholder}
-            placeholderTextColor={COLORS.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={value}
             onChangeText={onChangeText}
             onFocus={handleFocus}
@@ -59,7 +61,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           />
           {value.length > 0 && (
             <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-              <CloseIcon size={18} color={COLORS.textSecondary} />
+              <CloseIcon size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -82,12 +84,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    // backgroundColor will be set dynamically using colors.surface
   },
   input: {
     flex: 1,
     ...TYPOGRAPHY.body,
-    color: COLORS.text,
+    // color will be set dynamically using colors.text
     marginLeft: SPACING.sm,
     marginRight: SPACING.sm,
   },

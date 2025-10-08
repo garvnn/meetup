@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../utils/theme';
+import { useTheme } from '../utils/ThemeContext';
 import { FloatingTabBar } from '../components/FloatingTabBar';
 import { getMyMeetups, initializeMockData, joinMeetup, leaveMeetup, Meetup } from '../lib/data';
 import { CONFIG } from '../lib/config';
@@ -20,6 +21,7 @@ import { Alert } from 'react-native';
 
 export default function ListPage() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [meetups, setMeetups] = useState<Meetup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -180,10 +182,10 @@ export default function ListPage() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Events</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Events</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading events...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading events...</Text>
         </View>
         <FloatingTabBar />
       </SafeAreaView>
@@ -191,24 +193,24 @@ export default function ListPage() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Events</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Events</Text>
       </View>
 
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={COLORS.textTertiary} />
+        <View style={[styles.searchBar, { backgroundColor: colors.surface }]}>
+          <Ionicons name="search" size={20} color={colors.textTertiary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Search events..."
-            placeholderTextColor={COLORS.textTertiary}
+            placeholderTextColor={colors.textTertiary}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color={COLORS.textTertiary} />
+              <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
             </TouchableOpacity>
           )}
         </View>
@@ -217,8 +219,8 @@ export default function ListPage() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {filteredMeetups.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No events found</Text>
-            <Text style={styles.emptySubtext}>
+            <Text style={[styles.emptyText, { color: colors.text }]}>No events found</Text>
+            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
               {searchQuery ? 'Try adjusting your search' : 'Create an event to get started'}
             </Text>
           </View>
@@ -226,13 +228,13 @@ export default function ListPage() {
           filteredMeetups.map((meetup) => (
           <TouchableOpacity 
             key={meetup.id} 
-            style={styles.meetupItem}
+            style={[styles.meetupItem, { backgroundColor: colors.surface }]}
             onPress={() => handleEventPress(meetup)}
             activeOpacity={0.7}
           >
             <View style={styles.meetupContent}>
               <View style={styles.meetupHeader}>
-                <Text style={styles.meetupTitle}>{meetup.title}</Text>
+                <Text style={[styles.meetupTitle, { color: colors.text }]}>{meetup.title}</Text>
                 {meetup.isJoined && (
                   <View style={styles.joinedBadge}>
                     <Text style={styles.joinedText}>Joined</Text>
@@ -240,32 +242,32 @@ export default function ListPage() {
                 )}
               </View>
               
-              <Text style={styles.meetupDescription} numberOfLines={2}>
+              <Text style={[styles.meetupDescription, { color: colors.textSecondary }]} numberOfLines={2}>
                 {meetup.description || 'No description available'}
               </Text>
               
               {meetup.locationName && (
-                <Text style={styles.meetupLocation}>
-                  <Ionicons name="location" size={14} color={COLORS.textTertiary} /> {meetup.locationName}
+                <Text style={[styles.meetupLocation, { color: colors.textSecondary }]}>
+                  <Ionicons name="location" size={14} color={colors.textTertiary} /> {meetup.locationName}
                 </Text>
               )}
               
               <View style={styles.meetupFooter}>
                 <View style={styles.timeContainer}>
-                  <Ionicons name="time" size={16} color={COLORS.textTertiary} />
-                  <Text style={styles.timeText}>
+                  <Ionicons name="time" size={16} color={colors.textTertiary} />
+                  <Text style={[styles.timeText, { color: colors.textSecondary }]}>
                     {meetup.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {meetup.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </View>
                 
                 <View style={styles.attendeeContainer}>
-                  <Ionicons name="people" size={16} color={COLORS.textTertiary} />
-                  <Text style={styles.attendeeText}>{meetup.attendeeCount} attending</Text>
+                  <Ionicons name="people" size={16} color={colors.textTertiary} />
+                  <Text style={[styles.attendeeText, { color: colors.textSecondary }]}>{meetup.attendeeCount} attending</Text>
                 </View>
               </View>
             </View>
             
-            <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
+            <Ionicons name="chevron-forward" size={20} color={colors.primary} />
           </TouchableOpacity>
           ))
         )}
@@ -292,7 +294,7 @@ export default function ListPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // backgroundColor will be set dynamically using colors.background
   },
   header: {
     paddingHorizontal: SPACING.lg,
@@ -311,7 +313,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    // backgroundColor will be set dynamically using colors.surface
     borderRadius: RADII.lg,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
@@ -363,7 +365,7 @@ const styles = StyleSheet.create({
   meetupItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    // backgroundColor will be set dynamically using colors.surface
     borderRadius: RADII.lg,
     padding: SPACING.md,
     marginBottom: SPACING.md,

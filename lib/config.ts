@@ -53,8 +53,8 @@ export const CONFIG = {
 
   // API endpoints
   API: {
-    BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'https://eb76d9ca5b89.ngrok-free.app',
-    NGROK_URL: process.env.EXPO_PUBLIC_NGROK_URL || 'https://eb76d9ca5b89.ngrok-free.app',
+    BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000',
+    NGROK_URL: process.env.EXPO_PUBLIC_NGROK_URL || 'http://localhost:8000',
     ENDPOINTS: {
       HEALTH: '/health',
       ACCEPT_INVITE: '/accept_invite',

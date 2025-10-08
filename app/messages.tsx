@@ -7,6 +7,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADII, TYPOGRAPHY } from '../utils/theme';
+import { useTheme } from '../utils/ThemeContext';
 import { FloatingTabBar } from '../components/FloatingTabBar';
 import { getMyMessages } from '../lib/data';
 import { GroupChat } from '../components/GroupChat';
@@ -23,6 +24,7 @@ interface MessageThread {
 }
 
 export default function MessagesPage() {
+  const { colors } = useTheme();
   const [messages, setMessages] = useState<MessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<MessageThread | null>(null);
@@ -113,27 +115,27 @@ export default function MessagesPage() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Messages</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Messages</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading messages...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading messages...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Messages</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {messages.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="chatbubbles-outline" size={48} color={COLORS.textTertiary} />
-            <Text style={styles.emptyTitle}>No Messages</Text>
-            <Text style={styles.emptySubtitle}>Join a meetup to start chatting!</Text>
+            <Ionicons name="chatbubbles-outline" size={48} color={colors.textTertiary} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No Messages</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>Join a meetup to start chatting!</Text>
           </View>
         ) : (
           messages.map((message) => (
@@ -144,7 +146,7 @@ export default function MessagesPage() {
             >
               <View style={styles.messageContent}>
                 <View style={styles.messageHeader}>
-                  <Text style={styles.meetupTitle}>{message.meetupTitle}</Text>
+                  <Text style={[styles.meetupTitle, { color: colors.text }]}>{message.meetupTitle}</Text>
                   <View style={styles.badgesContainer}>
                     {message.isPrivate && (
                       <View style={styles.privateBadge}>
@@ -153,16 +155,16 @@ export default function MessagesPage() {
                     )}
                     {message.isGroup && message.memberCount && (
                       <View style={styles.memberBadge}>
-                        <Ionicons name="people" size={12} color={COLORS.textTertiary} />
-                        <Text style={styles.memberText}>{message.memberCount}</Text>
+                        <Ionicons name="people" size={12} color={colors.textTertiary} />
+                        <Text style={[styles.memberText, { color: colors.textTertiary }]}>{message.memberCount}</Text>
                       </View>
                     )}
                   </View>
                 </View>
-                <Text style={styles.lastMessage} numberOfLines={2}>
+                <Text style={[styles.lastMessage, { color: colors.textSecondary }]} numberOfLines={2}>
                   {message.lastMessage}
                 </Text>
-                <Text style={styles.timestamp}>{message.timestamp}</Text>
+                <Text style={[styles.timestamp, { color: colors.textTertiary }]}>{message.timestamp}</Text>
               </View>
               
               {message.unreadCount > 0 && (
@@ -171,7 +173,7 @@ export default function MessagesPage() {
                 </View>
               )}
               
-              <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
+              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
             </TouchableOpacity>
           ))
         )}
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...TYPOGRAPHY.largeTitle,
-    color: COLORS.text,
+    // color will be set dynamically using colors.text
   },
   content: {
     flex: 1,
@@ -209,7 +211,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
+    // color will be set dynamically using colors.textSecondary
   },
   emptyContainer: {
     flex: 1,
@@ -219,13 +221,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     ...TYPOGRAPHY.headline,
-    color: COLORS.text,
+    // color will be set dynamically using colors.text
     marginTop: SPACING.md,
     marginBottom: SPACING.xs,
   },
   emptySubtitle: {
     ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
+    // color will be set dynamically using colors.textSecondary
     textAlign: 'center',
   },
   messageItem: {
@@ -246,7 +248,7 @@ const styles = StyleSheet.create({
   },
   meetupTitle: {
     ...TYPOGRAPHY.headline,
-    color: COLORS.text,
+    // color will be set dynamically using colors.text
     flex: 1,
   },
   badgesContainer: {
@@ -276,17 +278,17 @@ const styles = StyleSheet.create({
   },
   memberText: {
     ...TYPOGRAPHY.caption1,
-    color: COLORS.textTertiary,
+    // color will be set dynamically using colors.textTertiary
     fontWeight: '500',
   },
   lastMessage: {
     ...TYPOGRAPHY.body,
-    color: COLORS.textSecondary,
+    // color will be set dynamically using colors.textSecondary
     marginBottom: SPACING.xs,
   },
   timestamp: {
     ...TYPOGRAPHY.footnote,
-    color: COLORS.textTertiary,
+    // color will be set dynamically using colors.textTertiary
   },
   unreadBadge: {
     backgroundColor: COLORS.primary,

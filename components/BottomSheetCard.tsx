@@ -8,6 +8,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-nati
 import { BlurView } from 'expo-blur';
 import { ShareIcon, ChatIcon, JoinIcon, LeaveIcon, TimeIcon, LocationIcon, PeopleIcon, CalendarIcon } from './TabIcons';
 import { COLORS, SPACING, RADII, TYPOGRAPHY, SHADOWS } from '../utils/theme';
+import { useTheme } from '../utils/ThemeContext';
 import { Meetup } from '../lib/data';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -34,6 +35,7 @@ export const BottomSheetCard: React.FC<BottomSheetCardProps> = ({
   onOpenChat,
   onAddToCalendar,
 }) => {
+  const { colors } = useTheme();
 
   const handleJoin = () => {
     if (meetup) {
@@ -80,23 +82,23 @@ export const BottomSheetCard: React.FC<BottomSheetCardProps> = ({
   return (
     <View style={styles.container}>
       <BlurView intensity={80} style={styles.blurContainer}>
-        <View style={styles.content}>
+        <View style={[styles.content, { backgroundColor: colors.surface }]}>
           {/* Grabber */}
           <View style={styles.grabber} />
           
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title} numberOfLines={2}>
+            <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
               {meetup.title}
             </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeText}>✕</Text>
+              <Text style={[styles.closeText, { color: colors.text }]}>✕</Text>
             </TouchableOpacity>
           </View>
 
           {/* Description */}
           {meetup.description && (
-            <Text style={styles.description} numberOfLines={3}>
+            <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={3}>
               {meetup.description}
             </Text>
           )}
@@ -104,22 +106,22 @@ export const BottomSheetCard: React.FC<BottomSheetCardProps> = ({
           {/* Details */}
           <View style={styles.details}>
             <View style={styles.detailRow}>
-              <TimeIcon size={16} color={COLORS.textSecondary} />
-              <Text style={styles.detailText}>
+              <TimeIcon size={16} color={colors.textSecondary} />
+              <Text style={[styles.detailText, { color: colors.textSecondary }]}>
                 {formatDate(meetup.startTime)} • {formatTime(meetup.startTime)} - {formatTime(meetup.endTime)}
               </Text>
             </View>
             
             <View style={styles.detailRow}>
-              <LocationIcon size={16} color={COLORS.textSecondary} />
-              <Text style={styles.detailText}>
+              <LocationIcon size={16} color={colors.textSecondary} />
+              <Text style={[styles.detailText, { color: colors.textSecondary }]}>
                 {meetup.locationName || 'Near campus'}
               </Text>
             </View>
             
             <View style={styles.detailRow}>
-              <PeopleIcon size={16} color={COLORS.textSecondary} />
-              <Text style={styles.detailText}>{meetup.attendeeCount} attendees</Text>
+              <PeopleIcon size={16} color={colors.textSecondary} />
+              <Text style={[styles.detailText, { color: colors.textSecondary }]}>{meetup.attendeeCount} attendees</Text>
             </View>
           </View>
 
