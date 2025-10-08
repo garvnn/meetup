@@ -33,10 +33,7 @@ const MeetupPinComponent: React.FC<MeetupPinProps> = ({
   isNearby = false,
   onPress,
 }) => {
-  console.log('MeetupPin: Rendering pin for', title, 'with image:', eventImage);
-  
   const handlePress = () => {
-    console.log('MeetupPin: Pressed for', title);
     if (onPress) {
       onPress();
     }
@@ -74,13 +71,11 @@ const MeetupPinComponent: React.FC<MeetupPinProps> = ({
   // Calculate image visibility - prioritize showing images when available
   const shouldShowImage = useMemo(() => {
     if (!eventImage || imageError) {
-      console.log('MeetupPin: No image or error - eventImage:', !!eventImage, 'imageError:', imageError);
       return false;
     }
     // Show image when we have one - use very lenient thresholds
     // Show images at almost any zoom level and distance
     const shouldShow = distanceFromCenter < 2000 && mapZoom > 0.8;
-    console.log('MeetupPin: Image visibility check - distance:', distanceFromCenter, 'zoom:', mapZoom, 'shouldShow:', shouldShow);
     return shouldShow;
   }, [eventImage, distanceFromCenter, mapZoom, imageError]);
 
@@ -89,7 +84,6 @@ const MeetupPinComponent: React.FC<MeetupPinProps> = ({
     // Always show bubble as fallback when image is not showing
     // This ensures there's always something visible
     const showBubble = !shouldShowImage;
-    console.log('MeetupPin: Bubble visibility - shouldShowImage:', shouldShowImage, 'shouldShowBubble:', showBubble);
     return showBubble;
   }, [shouldShowImage]);
 
@@ -143,8 +137,6 @@ const MeetupPinComponent: React.FC<MeetupPinProps> = ({
               loadingIndicatorSource={require('../assets/icon.png')}
               defaultSource={require('../assets/icon.png')}
               // Optimized image settings
-              quality={80} // Reduced quality for faster loading
-              priority="normal"
               progressiveRenderingEnabled={false} // Disable for consistency
               onLoadStart={() => setImageLoaded(false)}
               onLoad={() => setImageLoaded(true)}

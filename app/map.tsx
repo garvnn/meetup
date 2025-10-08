@@ -192,25 +192,12 @@ export default function MapPage() {
       const userLat = location.coords.latitude;
       const userLng = location.coords.longitude;
 
-      // Check if user location is very far from Penn campus (more than 100km away)
-      // If so, center the map on Penn campus instead
-      const pennLat = 39.9522;
-      const pennLng = -75.1932;
-      const distanceFromPenn = calculateDistance(userLat, userLng, pennLat, pennLng);
-      
-      let mapCenterLat = userLat;
-      let mapCenterLng = userLng;
-      
-      if (distanceFromPenn > 100000) { // 100km in meters
-        console.log('Map: User location is', Math.round(distanceFromPenn/1000), 'km from Penn campus. Centering map on Penn campus.');
-        mapCenterLat = pennLat;
-        mapCenterLng = pennLng;
-      }
+      console.log('Map: User location:', userLat, userLng);
 
-      // Set region
+      // Set region to actual user location
       setRegion({
-        latitude: mapCenterLat,
-        longitude: mapCenterLng,
+        latitude: userLat,
+        longitude: userLng,
         latitudeDelta: LATITUDE_DELTA,
         longitudeDelta: LONGITUDE_DELTA,
       });
@@ -440,62 +427,12 @@ export default function MapPage() {
                 style={styles.map}
                 region={region}
                 onRegionChangeComplete={(newRegion) => {
-                  setRegion(newRegion);
                   handleRegionChange(newRegion);
                 }}
                 showsUserLocation
                 showsMyLocationButton={false}
-                mapType={isDarkMode ? 'standard' : 'standard'}
-                customMapStyle={isDarkMode ? [
-                  // Minimal but aggressive dark styling for Apple Maps
-                  {elementType: 'geometry', stylers: [{color: '#000000'}]},
-                  {elementType: 'labels.icon', stylers: [{visibility: 'off'}]},
-                  {elementType: 'labels.text.fill', stylers: [{color: '#FFFFFF'}]},
-                  {elementType: 'labels.text.stroke', stylers: [{color: '#000000', weight: 2}]},
-                  
-                  // Water - pure black
-                  {
-                    featureType: 'water',
-                    elementType: 'geometry',
-                    stylers: [{color: '#000000'}]
-                  },
-                  
-                  // Roads - very dark
-                  {
-                    featureType: 'road',
-                    elementType: 'geometry',
-                    stylers: [{color: '#1a1a1a'}]
-                  },
-                  {
-                    featureType: 'road',
-                    elementType: 'labels.text.fill',
-                    stylers: [{color: '#FFFFFF'}]
-                  },
-                  
-                  // POIs - dark
-                  {
-                    featureType: 'poi',
-                    elementType: 'geometry',
-                    stylers: [{color: '#000000'}]
-                  },
-                  {
-                    featureType: 'poi',
-                    elementType: 'labels.text.fill',
-                    stylers: [{color: '#FFFFFF'}]
-                  },
-                  
-                  // Administrative - dark
-                  {
-                    featureType: 'administrative',
-                    elementType: 'geometry',
-                    stylers: [{color: '#000000'}]
-                  },
-                  {
-                    featureType: 'administrative',
-                    elementType: 'labels.text.fill',
-                    stylers: [{color: '#FFFFFF'}]
-                  }
-                ] : undefined}
+                mapType="standard"
+                userInterfaceStyle={isDarkMode ? 'dark' : 'light'}
                 // Disable all UI elements that might show white
                 showsCompass={false}
                 showsTraffic={false}
@@ -508,9 +445,7 @@ export default function MapPage() {
                 // Long press to create meetup
                 onLongPress={handleLongPress}
               >
-                {meetupsWithProximity.map(meetup => {
-                  console.log('Map: Rendering marker for:', meetup.title, 'ID:', meetup.id);
-                  return (
+                {meetupsWithProximity.map(meetup => (
                     <Marker
                       key={meetup.id}
                       coordinate={{ latitude: meetup.latitude, longitude: meetup.longitude }}
@@ -533,8 +468,7 @@ export default function MapPage() {
                         onPress={() => handlePinPress(meetup)}
                       />
                     </Marker>
-                  );
-                })}
+                ))}
               </MapView>
 
               <View style={styles.searchBarContainer}>

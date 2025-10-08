@@ -2,7 +2,7 @@
  * Create Event UI - Full-screen create meetup flow
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -99,9 +99,24 @@ export default function CreateEvent({ onClose, onSuccess, onOpenDeveloperPanel, 
     }
   };
 
+  // Rate limiting for geocoding requests
+  const lastGeocodeTime = useRef<number>(0);
+  const GEOCODE_COOLDOWN = 2000; // 2 seconds between requests
+
   const getLocationName = async (lat: number, lng: number) => {
     setIsLoadingLocation(true);
+    
+    // Check rate limit
+    const now = Date.now();
+    if (now - lastGeocodeTime.current < GEOCODE_COOLDOWN) {
+      console.log('Geocoding rate limited, using coordinates');
+      setLocationName(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+      setIsLoadingLocation(false);
+      return;
+    }
+    
     try {
+      lastGeocodeTime.current = now;
       const reverseGeocode = await Location.reverseGeocodeAsync({
         latitude: lat,
         longitude: lng,
@@ -128,8 +143,8 @@ export default function CreateEvent({ onClose, onSuccess, onOpenDeveloperPanel, 
         setLocationName(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
       }
     } catch (error) {
-      console.error('Reverse geocoding failed:', error);
-      // Fallback to coordinates
+      console.log('Reverse geocoding failed, using coordinates:', error.message);
+      // Fallback to coordinates - don't log as error since this is expected
       setLocationName(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
     } finally {
       setIsLoadingLocation(false);
